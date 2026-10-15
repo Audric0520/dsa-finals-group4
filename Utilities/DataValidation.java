@@ -95,4 +95,13 @@ public class DataValidation {
         return number;
     }
 
+    public static String validateFieldChoice(String prompt) {
+        int choice = validateNumberChoiceInput(prompt, 1, 2);
+        return (choice == 1) ? "quantity" : "price";
+    }
+
+    public static boolean validateSortOrderChoice(String prompt) {
+        int choice = validateNumberChoiceInput(prompt, 1, 2);
+        return choice == 1;
+    }
 }
