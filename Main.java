@@ -21,6 +21,7 @@ public class Main {
             switch (choice) {
                 case 1 -> cashierFunction();
                 case 2 -> iceCreamMakerFunction();
+                case 3 -> managerFunction();
                 default -> isRunning = false;
             }
         }

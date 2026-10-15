@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import IceCream.IceCreamType;
 
 public class DisplayMethods {
-    public static final IceCreamManager icm = new IceCreamManager();
+    public static final IceCreamManager icm = IceCreamManager.getInstance();
     public static final String tableFormat = "%-20s | %-20s | %-20s | %-20s | %-20s\n";
 
     public static void displayIceCreamHeader(String headerText) {

@@ -120,6 +120,15 @@ public class IceCreamManager {
         return true;
     }
 
+    public boolean updateQuantity(String id, int quantity) {
+        IceCreamType iceCream = findByID(id);
+        if (iceCream == null || quantity < 0 || quantity > MAX_STOCK) {
+            return false;
+        }
+        iceCream.setQuantity(quantity);
+        return true;
+    }
+
     public boolean restock(String id, int amount) {
         IceCreamType iceCream = findByID(id);
         if (iceCream == null || amount <= 0 || iceCream.getQuantity() + amount > MAX_STOCK) {
@@ -400,7 +409,7 @@ public class IceCreamManager {
 
     public void displayIceCreams(ArrayList<IceCreamType> list) {
         if (list.isEmpty()) {
-            System.out.println("No ice cream products found.");
+            System.out.println("There are no ice creams to display.");
             return;
         }
         System.out.println("---------------------------------------------------------------");
