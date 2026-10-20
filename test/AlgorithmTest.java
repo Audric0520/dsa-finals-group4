@@ -18,7 +18,7 @@ public class AlgorithmTest {
         testPriceValidation();
         testInventory();
         testOrderQueue();
-        testCancelOrder();
+        testPendingOrderList();
         testStack();
 
         System.out.println("\n" + passed + " passed, " + failed + " failed.");
@@ -226,28 +226,21 @@ public class AlgorithmTest {
         check("Processing does not change reserved stock", inventory.findById("IC001").getQuantity() == 45);
     }
 
-    private static void testCancelOrder() {
+    private static void testPendingOrderList() {
         Inventory inventory = sampleInventory();
         IceCreamMaker maker = new IceCreamMaker(inventory);
         maker.placeOrder(items(inventory, "IC001", 1));
         maker.placeOrder(items(inventory, "IC002", 4));
         maker.placeOrder(items(inventory, "IC003", 1));
-        maker.placeOrder(items(inventory, "IC004", 1));
 
-        check("Cancel missing order ID returns null and changes nothing",
-                maker.cancelPendingOrder("ORD-999") == null
-                        && orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-002 ORD-003 ORD-004"));
-        check("Cancel ORD-002 removes only that order",
-                maker.cancelPendingOrder("ORD-002") != null
-                        && orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-003 ORD-004"));
-        check("Cancelling returns the reserved stock", inventory.findById("IC002").getQuantity() == 25);
-        check("Cancelled order cannot be cancelled again", maker.cancelPendingOrder("ORD-002") == null);
-        check("Cancel the last order keeps FIFO order of the rest",
-                maker.cancelPendingOrder("ORD-004") != null
-                        && orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-003"));
-        check("Next processed after cancelling is still the oldest (ORD-001)",
-                maker.completeNextOrder().getOrderId().equals("ORD-001"));
-        check("Cancel on empty queue returns null", new IceCreamMaker(inventory).cancelPendingOrder("ORD-001") == null);
+        check("Pending orders are listed in arrival order",
+                orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-002 ORD-003"));
+        maker.completeNextOrder();
+        check("After processing one, the rest keep their order",
+                orderIds(maker.getPendingOrders()).equals("ORD-002 ORD-003"));
+        check("A new order joins the back of the queue",
+                maker.placeOrder(items(inventory, "IC004", 1)) != null
+                        && orderIds(maker.getPendingOrders()).equals("ORD-002 ORD-003 ORD-004"));
     }
 
     private static void testStack() {
