@@ -7,20 +7,21 @@ import java.util.HashMap;
  * ArrayList - keeps every product in the order it was added (used for display, sorting and linear search).
  * HashMap   - maps a product ID to its product for fast O(1) lookup and duplicate-ID checks.
  *
- * All rules (unique ID, price range, stock never negative) are checked here, so an invalid
+ * All rules (unique ID, price range, quantity range) are checked here, so an invalid
  * product can never be saved, no matter which menu calls these methods.
  */
 public class Inventory {
-    public static final int MAX_STOCK = 999;
+    public static final int MIN_NEW_QUANTITY = 1;  // a new product must start with at least 1 in stock
+    public static final int MAX_STOCK = 100;
 
     private final ArrayList<Product> products = new ArrayList<>();
     private final HashMap<String, Product> productMap = new HashMap<>();
 
-    /** Fails if the ID already exists, the price is out of range or the quantity is invalid. */
+    /** Fails if the ID already exists, the price is out of range or the quantity is not 1-100. */
     public boolean addProduct(Product product) {
         if (productMap.containsKey(product.getProductId())
                 || !Product.isValidPrice(product.getPrice())
-                || product.getQuantity() < 0 || product.getQuantity() > MAX_STOCK) {
+                || product.getQuantity() < MIN_NEW_QUANTITY || product.getQuantity() > MAX_STOCK) {
             return false;
         }
         products.add(product);
@@ -54,7 +55,10 @@ public class Inventory {
         return true;
     }
 
-    /** Used by the Manager to set the stock to an exact number (for example after restocking). */
+    /**
+     * Used by the Manager to set the stock to an exact number (for example after restocking).
+     * 0 is allowed here because an existing product can be sold out.
+     */
     public boolean updateQuantity(String productId, int newQuantity) {
         Product product = productMap.get(productId);
         if (product == null || newQuantity < 0 || newQuantity > MAX_STOCK) {
@@ -87,15 +91,18 @@ public class Inventory {
         return products.isEmpty();
     }
 
-    public static void displayProducts(ArrayList<Product> list) {
+    /** Prints a title and the products as a table. Used by view, search and sort. */
+    public static void displayProducts(String title, ArrayList<Product> list) {
+        System.out.println();
+        System.out.println("=== " + title + " ===");
         if (list.isEmpty()) {
             System.out.println("No products to display.");
             return;
         }
-        String line = "----------------------------------------------------------";
+        String header = Product.tableHeader();
+        String line = "-".repeat(header.length());
         System.out.println(line);
-        System.out.printf("%-6s | %-18s | %-4s | %-4s | %5s | %8s%n", "ID", "Flavor", "Size", "Type", "Stock",
-                "Price");
+        System.out.println(header);
         System.out.println(line);
         for (Product product : list) {
             System.out.println(product);

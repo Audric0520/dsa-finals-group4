@@ -76,7 +76,14 @@ public class Product {
 
     @Override
     public String toString() {
-        return String.format("%-6s | %-18s | %-4c | %-4s | %5d | P%7.2f",
-                productId, flavor, servingSize, containerType, quantity, price);
+        return String.format(TABLE_ROW_FORMAT, productId, flavor, String.valueOf(servingSize), containerType,
+                String.valueOf(quantity), String.format("P%.2f", price));
+    }
+
+    /** One format for the table header and every row, so the columns always line up. */
+    public static final String TABLE_ROW_FORMAT = "%-6s | %-18s | %-4s | %-4s | %5s | %8s";
+
+    public static String tableHeader() {
+        return String.format(TABLE_ROW_FORMAT, "ID", "Flavor", "Size", "Type", "Stock", "Price");
     }
 }

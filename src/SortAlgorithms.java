@@ -6,13 +6,14 @@ import java.util.Comparator;
  * order according to the comparator.
  *
  * Where each one is used:
- *   Insertion Sort - "Sort products" menu option (sorts by price, lowest first)
+ *   Insertion Sort - "Sort products" menu option (by quantity or price, ascending or descending)
  *   Quick Sort     - "View inventory" (lists products by product ID)
  *   Merge Sort     - Binary Search (sorts a copy by product ID before searching)
  */
 public class SortAlgorithms {
 
     public static final Comparator<Product> BY_ID = Comparator.comparing(Product::getProductId);
+    public static final Comparator<Product> BY_QUANTITY = Comparator.comparingInt(Product::getQuantity);
     public static final Comparator<Product> BY_PRICE = Comparator.comparingDouble(Product::getPrice);
 
     // ---------------- Insertion Sort: O(n^2), simple, stable, good for small lists ----------------
