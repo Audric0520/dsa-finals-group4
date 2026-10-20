@@ -61,7 +61,7 @@ public class Cashier extends User {
     /**
      * Builds one customer order that may contain several products.
      * The items are kept in an ArrayDeque used as a stack, so U (undo) removes the
-     * most recently added item (LIFO). Nothing is reserved or queued until D (done),
+     * most recently added item (LIFO). Nothing is queued until D (done),
      * so cancelling with C leaves the stock and the queue unchanged.
      */
     private void addNewOrder() {
@@ -118,9 +118,13 @@ public class Cashier extends User {
             System.out.println("No product found with ID " + productId + ".");
             return;
         }
-        int available = product.getQuantity() - quantityInCart(cart, product);
+        // Stock not already needed by pending orders or by this order so far
+        int available = iceCreamMaker.getAvailableQuantity(product) - quantityInCart(cart, product);
         if (available <= 0) {
-            System.out.println(product.getFlavor() + " (" + productId + ") has no more stock available.");
+            System.out.println(product.getFlavor() + " (" + productId + ") has no more stock available"
+                    + " (in stock: " + product.getQuantity() + ", in pending orders: "
+                    + iceCreamMaker.getPendingQuantity(product) + ", already in this order: "
+                    + quantityInCart(cart, product) + ").");
             return;
         }
         int quantity = InputHelper.readInt("How many " + product.getFlavor() + " (" + productId + ")? Enter 1-"
