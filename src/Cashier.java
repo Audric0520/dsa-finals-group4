@@ -70,23 +70,29 @@ public class Cashier extends User {
             return;
         }
         System.out.println("\n--- New Customer Order ---");
-        System.out.println("Enter a product ID to add it. D = done, U = undo last item, C = cancel order.");
+        System.out.println("How to enter an order:");
+        System.out.println("  - Type a product ID (e.g. IC001) to add that product to the order.");
+        System.out.println("  - Type D when the order is complete to send it to the queue.");
+        System.out.println("  - Type U to remove the last product you added.");
+        System.out.println("  - Type C to cancel the whole order.");
         ArrayDeque<OrderItem> cart = new ArrayDeque<>();
 
         while (true) {
-            String input = InputHelper.readText("Product ID (or D / U / C): ").toUpperCase();
+            String input = InputHelper.readText(
+                    "\nEnter product ID to add (D = Done, U = Undo last item, C = Cancel order): ").toUpperCase();
             if (input.equals("D")) {
                 if (cart.isEmpty()) {
-                    System.out.println("The order has no items yet. Add a product or enter C to cancel.");
+                    System.out.println("The order is still empty. Add at least one product, or type C to cancel.");
                     continue;
                 }
                 break;
             }
             if (input.equals("U")) {
                 if (cart.isEmpty()) {
-                    System.out.println("There is no item to undo.");
+                    System.out.println("There is nothing to undo. The order is still empty.");
                 } else {
                     System.out.println("Removed from order: " + cart.pop());
+                    System.out.println("Items in this order: " + cart.size());
                 }
                 continue;
             }
@@ -104,7 +110,7 @@ public class Cashier extends User {
 
     private void addItemToCart(ArrayDeque<OrderItem> cart, String productId) {
         if (!InputHelper.isValidProductId(productId)) {
-            System.out.println("Product ID must look like IC001 (IC + 3 digits).");
+            System.out.println("\"" + productId + "\" is not valid. Type a product ID like IC001, or D, U or C.");
             return;
         }
         Product product = inventory.findById(productId);
@@ -117,10 +123,12 @@ public class Cashier extends User {
             System.out.println(product.getFlavor() + " (" + productId + ") has no more stock available.");
             return;
         }
-        int quantity = InputHelper.readInt("Quantity (1-" + available + ", or C to cancel): ", 1, available);
+        int quantity = InputHelper.readInt("How many " + product.getFlavor() + " (" + productId + ")? Enter 1-"
+                + available + " (or C to cancel the order): ", 1, available);
         OrderItem item = new OrderItem(product, quantity);
         cart.push(item);
-        System.out.println("Added: " + item + " | Items in order: " + cart.size());
+        System.out.println("Added to order: " + item);
+        System.out.println("Items in this order: " + cart.size());
     }
 
     // Stock already placed in this order for the same product, so it cannot be over-ordered.

@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Comparator;
 
 /**
  * Base class for the three roles.
@@ -44,10 +45,9 @@ public abstract class User {
 
     /** Shows every product, listed by product ID (sorted with Quick Sort). */
     public void viewInventory() {
-        System.out.println("\n=== PRODUCT INVENTORY (by product ID) ===");
         ArrayList<Product> products = inventory.getProducts();
         SortAlgorithms.quickSort(products, SortAlgorithms.BY_ID);
-        Inventory.displayProducts(products);
+        Inventory.displayProducts("PRODUCT INVENTORY (by product ID)", products);
     }
 
     public void searchProducts() {
@@ -68,7 +68,7 @@ public abstract class User {
             } else {
                 ArrayList<Product> result = new ArrayList<>();
                 result.add(found);
-                Inventory.displayProducts(result);
+                Inventory.displayProducts("SEARCH RESULT (product ID " + id + ")", result);
             }
         } else {
             String keyword = InputHelper.readText("Enter flavor keyword (or C to cancel): ");
@@ -76,25 +76,42 @@ public abstract class User {
             if (matches.isEmpty()) {
                 System.out.println("No product flavor contains \"" + keyword + "\".");
             } else {
-                System.out.println(matches.size() + " match(es) found:");
-                Inventory.displayProducts(matches);
+                Inventory.displayProducts("SEARCH RESULTS (flavor contains \"" + keyword + "\") - "
+                        + matches.size() + " found", matches);
             }
         }
     }
 
     /**
-     * Sorts a copy of the inventory by price (lowest first) using Insertion Sort.
-     * No algorithm menu is shown. Insertion Sort is stable, so products with the same
-     * price keep their original order.
+     * Asks what to sort by (quantity or price) and in which order, then sorts a copy
+     * of the inventory with Insertion Sort. Insertion Sort is stable, so products with
+     * the same value keep their original order.
      */
     public void sortProducts() {
         if (inventory.isEmpty()) {
             System.out.println("The inventory is empty. Nothing to sort.");
             return;
         }
+        System.out.println("\nSort products by:");
+        System.out.println("[1] Quantity");
+        System.out.println("[2] Price");
+        boolean byQuantity = InputHelper.readInt("Choice (or C to cancel): ", 1, 2) == 1;
+
+        System.out.println("\nSort order:");
+        System.out.println("[1] Ascending (lowest to highest)");
+        System.out.println("[2] Descending (highest to lowest)");
+        boolean ascending = InputHelper.readInt("Choice (or C to cancel): ", 1, 2) == 1;
+
+        Comparator<Product> comparator = byQuantity ? SortAlgorithms.BY_QUANTITY : SortAlgorithms.BY_PRICE;
+        if (!ascending) {
+            comparator = comparator.reversed();
+        }
         ArrayList<Product> sorted = inventory.getProducts();
-        SortAlgorithms.insertionSort(sorted, SortAlgorithms.BY_PRICE);
-        System.out.println("\nSorting complete: products sorted by price (lowest to highest) using Insertion Sort.");
-        Inventory.displayProducts(sorted);
+        SortAlgorithms.insertionSort(sorted, comparator);
+
+        String key = byQuantity ? "quantity" : "price";
+        String order = ascending ? "lowest to highest" : "highest to lowest";
+        System.out.println("\nSorting complete: products sorted by " + key + " (" + order + ") using Insertion Sort.");
+        Inventory.displayProducts("SORTED PRODUCTS (" + key + ", " + order + ")", sorted);
     }
 }

@@ -9,7 +9,10 @@ It is written in plain Java with no external libraries.
 |---|---|
 | Role passwords | `Authentication` stores the three password constants. Each role menu needs its own password. A wrong password can be retried, `C` cancels back to the main menu, and passwords are never printed. |
 | Price limits | Prices must be from **P30.00 to P120.00**, inclusive. The rule is checked in three places: at input (`InputHelper.readPrice`), in the inventory logic (`Inventory.addProduct` / `updatePrice`), and in the model (`Product.setPrice` throws on an invalid price). This covers both add and update. |
-| Sorting | **Sort products** runs Insertion Sort by price (lowest first) straight away and prints a confirmation. There is no algorithm menu, and the behaviour is the same for every role. |
+| Sorting | **Sort products** asks for the key (`1` = Quantity, `2` = Price) and the order (`1` = Ascending, `2` = Descending). It then sorts with Insertion Sort and shows the result with a confirmation. There is no algorithm menu, and the behaviour is the same for every role. |
+| Quantity limit | A new product must start with **1 to 100** in stock. This is checked at input and in `Inventory.addProduct`. When updating an existing product, 0-100 is allowed, because a product can be sold out. |
+| Product tables | View, search and sort all print the same titled table. The header and rows share one format (`Product.TABLE_ROW_FORMAT`), so the columns always line up. |
+| Order entry prompts | The cashier sees short instructions first. Each prompt then says what to type: `Enter product ID to add (D = Done, U = Undo last item, C = Cancel order)`. |
 | Orders | The **Cashier** enters customer orders (one or more products) and views pending orders. The **Ice Cream Maker** views and processes orders (FIFO). |
 | Menus | All three menus match the required layout and order. `[0]` is always Log out. |
 | Cancel input | Typing `C` at any prompt inside an operation cancels it and returns to the role menu, without saving partial data. |
@@ -33,7 +36,7 @@ It is written in plain Java with no external libraries.
 - **Stock policy: reserve on order.** Stock is subtracted when the Cashier places an order. Pending orders therefore can never over-order, and every order in the queue can always be processed. Processing just removes the order from the front of the queue. A cashier can still back out of an order with `C` while entering it; nothing is reserved until the order is finished with `D`. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
 - **Queue location.** The queue lives in `IceCreamMaker`, as the specification requires. The Cashier is given a reference to it and calls `placeOrder()`.
 - **Where each algorithm is used.** Each one has a real job:
-  - **Insertion Sort**: the *Sort products* option (by price, stable).
+  - **Insertion Sort**: the *Sort products* option (by quantity or price, ascending or descending, stable).
   - **Quick Sort**: *View inventory* lists products by product ID.
   - **Merge Sort**: *Binary Search* sorts a copy **by product ID** before searching, so it never runs on a list sorted by another key.
   - **Linear Search**: search by flavor keyword.
@@ -101,8 +104,10 @@ java -cp out Main < test/demo-input.txt
 
 ## 6. Testing and Sample Output
 
-`AlgorithmTest` runs 57 checks, and all of them pass. They cover:
-- Insertion, Merge and Quick Sort (by price and ID, stability, empty and single-item lists)
+`AlgorithmTest` runs 68 checks, and all of them pass. They cover:
+- Insertion, Merge and Quick Sort (by price, quantity and ID, stability, empty and single-item lists)
+- Insertion Sort by quantity and by price in descending order
+- The quantity limits: a new product needs 1-100; an update allows 0-100
 - Linear and Binary Search (including unsorted input, missing IDs and empty lists)
 - The price limits: 30.00 and 120.00 accepted; 29.99, 120.01, 25, 130 and 150 rejected, both in the constructor and in update
 - The inventory rules
@@ -144,28 +149,84 @@ Serving size (S/M/L): C
 Operation cancelled. Returning to Manager Menu...
 ```
 
-**Sorting (no algorithm menu)**
+**Quantity limit when adding a product (1-100)**
 ```
-Sorting complete: products sorted by price (lowest to highest) using Insertion Sort.
-IC001  | Vanilla            | S    | Cone |    50 | P  45.00
-IC002  | Mango              | M    | Cone |    25 | P  60.00
-IC003  | Chocolate          | M    | Cup  |    40 | P  65.00
-IC005  | Strawberry         | L    | Cup  |    15 | P  85.00
-IC004  | Cookies and Cream  | L    | Cup  |    30 | P  90.00
+Quantity in stock (1-100): 0
+Please enter a whole number from 1 to 100.
+Quantity in stock (1-100): 101
+Please enter a whole number from 1 to 100.
+Quantity in stock (1-100): 20
+```
+
+**Sorting (Insertion Sort, user picks the key and the order)**
+```
+Sort products by:
+[1] Quantity
+[2] Price
+Choice (or C to cancel): 1
+
+Sort order:
+[1] Ascending (lowest to highest)
+[2] Descending (highest to lowest)
+Choice (or C to cancel): 2
+
+Sorting complete: products sorted by quantity (highest to lowest) using Insertion Sort.
+
+=== SORTED PRODUCTS (quantity, highest to lowest) ===
+------------------------------------------------------------
+ID     | Flavor             | Size | Type | Stock |    Price
+------------------------------------------------------------
+IC001  | Vanilla            | S    | Cone |    50 |   P45.00
+IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
+IC002  | Mango              | M    | Cone |    25 |   P60.00
+IC006  | Ube                | L    | Cone |    20 |   P99.50
+IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
+------------------------------------------------------------
+```
+
+**Search results table**
+```
+Enter flavor keyword (or C to cancel): co
+
+=== SEARCH RESULTS (flavor contains "co") - 2 found ===
+------------------------------------------------------------
+ID     | Flavor             | Size | Type | Stock |    Price
+------------------------------------------------------------
+IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
+------------------------------------------------------------
 ```
 
 **Order creation (Cashier)**
 ```
-Product ID (or D / U / C): IC001
-Quantity (1-50, or C to cancel): 2
-Added: 2x IC001 Vanilla (S, Cone) = P90.00 | Items in order: 1
-Product ID (or D / U / C): IC003
-Quantity (1-40, or C to cancel): 1
-Product ID (or D / U / C): U
+--- New Customer Order ---
+How to enter an order:
+  - Type a product ID (e.g. IC001) to add that product to the order.
+  - Type D when the order is complete to send it to the queue.
+  - Type U to remove the last product you added.
+  - Type C to cancel the whole order.
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001
+How many Vanilla (IC001)? Enter 1-50 (or C to cancel the order): 2
+Added to order: 2x IC001 Vanilla (S, Cone) = P90.00
+Items in this order: 1
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC003
+How many Chocolate (IC003)? Enter 1-40 (or C to cancel the order): 1
+Added to order: 1x IC003 Chocolate (M, Cup) = P65.00
+Items in this order: 2
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): U
 Removed from order: 1x IC003 Chocolate (M, Cup) = P65.00
-Product ID (or D / U / C): IC002
-Quantity (1-25, or C to cancel): 3
-Product ID (or D / U / C): D
+Items in this order: 1
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC002
+How many Mango (IC002)? Enter 1-25 (or C to cancel the order): 3
+Added to order: 3x IC002 Mango (M, Cone) = P180.00
+Items in this order: 2
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
 Order added to the queue: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
@@ -206,7 +267,10 @@ No pending orders to process.
 | Adjust inventory quantities | `Inventory.updateQuantity`, `Inventory.adjustStock` (reserve / return) | ✅ |
 | Password per role, retry, cancel, passwords never printed, constants in one class | `Authentication` | ✅ |
 | Price 30.00–120.00 on add and update, enforced in logic | `Product.isValidPrice` / `setPrice`, `Inventory`, `InputHelper.readPrice` | ✅ |
-| Sort products runs Insertion Sort with no algorithm menu, for all roles | `User.sortProducts` | ✅ |
+| Sort products: choose quantity or price, then ascending or descending; Insertion Sort; no algorithm menu; all roles | `User.sortProducts` | ✅ |
+| New product quantity must be 1-100 | `Manager.addProduct`, `Inventory.addProduct` | ✅ |
+| Search results shown in an aligned, titled table | `Inventory.displayProducts`, `Product.TABLE_ROW_FORMAT` | ✅ |
+| Clear order-entry instructions and prompts | `Cashier.addNewOrder` | ✅ |
 | Manager menu (exact layout, `[0]` = Log out) | `Manager.printMenu` | ✅ |
 | Cashier menu (exact layout) | `Cashier.printMenu` | ✅ |
 | Main menu order: Cashier, Ice Cream Maker, Manager, Exit | `Main.main` | ✅ |

@@ -67,8 +67,8 @@ public class Manager extends User {
         }
         String flavor = InputHelper.readFlavor("Flavor: ");
         char size = InputHelper.readServingSize("Serving size (S/M/L): ");
-        int quantity = InputHelper.readInt("Quantity in stock (0-" + Inventory.MAX_STOCK + "): ", 0,
-                Inventory.MAX_STOCK);
+        int quantity = InputHelper.readInt("Quantity in stock (" + Inventory.MIN_NEW_QUANTITY + "-"
+                + Inventory.MAX_STOCK + "): ", Inventory.MIN_NEW_QUANTITY, Inventory.MAX_STOCK);
         double price = InputHelper.readPrice(String.format("Price (P%.2f-P%.2f): P", Product.MIN_PRICE,
                 Product.MAX_PRICE));
         String container = InputHelper.readContainerType("Container type (cone/cup): ");
