@@ -100,13 +100,19 @@ public class IceCreamMaker extends User {
         }
     }
 
-    /** Removes and completes the order at the front of the queue (FIFO). */
+    /** Shows the order at the front of the queue (FIFO) and removes it once confirmed. */
     private void processNextOrder() {
-        Order order = pendingOrders.poll();
+        Order order = pendingOrders.peek(); // look at the oldest order without removing it
         if (order == null) {
             System.out.println("No pending orders to process.");
             return;
         }
+        System.out.println("Next order: " + order);
+        if (!InputHelper.readYesNo("Process this order? (Y/N): ")) {
+            System.out.println("Order left in the queue.");
+            return;
+        }
+        pendingOrders.poll();
         System.out.println("Processed: " + order);
         System.out.println("Orders still waiting: " + pendingOrders.size());
     }

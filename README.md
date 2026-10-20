@@ -112,7 +112,9 @@ IC004  | Cookies and Cream  | L    | Cup  |    30 | P   90.00
 FIFO order queue (orders 1, 2, 3 added; order 2 cancelled):
 ```
 Order # to cancel: 2 -> 3 returned to stock of IC005. Canceled: Order #2
-Processed: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
+Next order: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
+Process this order? (Y/N): N -> Order left in the queue.
+Process this order? (Y/N): Y -> Processed: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
 Processed: Order #3 | IC002 Mango (M, Cone) x2 | Total: P120.00
 No pending orders to process.
 ```

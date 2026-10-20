@@ -447,7 +447,20 @@ Canceled: Order #2
 [6] Process next order
 [7] Cancel an order
 [0] Log out
-Choice: Processed: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
+Choice: Next order: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
+Process this order? (Y/N): Order left in the queue.
+
+===== ICE CREAM MAKER MENU =====
+[1] View inventory
+[2] Search products
+[3] Sort products
+[4] Add new order to queue
+[5] View pending orders
+[6] Process next order
+[7] Cancel an order
+[0] Log out
+Choice: Next order: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
+Process this order? (Y/N): Processed: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
 Orders still waiting: 1
 
 ===== ICE CREAM MAKER MENU =====
@@ -459,7 +472,8 @@ Orders still waiting: 1
 [6] Process next order
 [7] Cancel an order
 [0] Log out
-Choice: Processed: Order #3 | IC002 Mango (M, Cone) x2 | Total: P120.00
+Choice: Next order: Order #3 | IC002 Mango (M, Cone) x2 | Total: P120.00
+Process this order? (Y/N): Processed: Order #3 | IC002 Mango (M, Cone) x2 | Total: P120.00
 Orders still waiting: 0
 
 ===== ICE CREAM MAKER MENU =====
