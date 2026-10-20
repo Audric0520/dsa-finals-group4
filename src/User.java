@@ -1,9 +1,12 @@
 import java.util.ArrayList;
-import java.util.Comparator;
 
 /**
- * Base class for the three roles. View, search and sort are shared by every role,
- * so they are written once here. Each role defines its own menu.
+ * Base class for the three roles.
+ *
+ * - showMenu() runs the menu loop for every role, so the loop and the cancel handling
+ *   are written only once. Each role only says what its menu looks like (printMenu)
+ *   and what each option does (handleChoice).
+ * - View, search and sort are shared by every role, so they are written once here.
  */
 public abstract class User {
     protected final Inventory inventory;
@@ -12,11 +15,39 @@ public abstract class User {
         this.inventory = inventory;
     }
 
-    public abstract void showMenu();
+    protected abstract String getRoleName();
 
+    protected abstract void printMenu();
+
+    /** Number of the highest menu option ([0] is always Log out). */
+    protected abstract int getLastOption();
+
+    protected abstract void handleChoice(int choice);
+
+    public void showMenu() {
+        while (true) {
+            System.out.println();
+            printMenu();
+            int choice = InputHelper.readMenuChoice(getLastOption());
+            if (choice == 0) {
+                System.out.println(getRoleName() + " logged out.");
+                return;
+            }
+            try {
+                handleChoice(choice);
+            } catch (OperationCancelledException e) {
+                // The user typed C somewhere in the operation; nothing was saved.
+                System.out.println("Operation cancelled. Returning to " + getRoleName() + " Menu...");
+            }
+        }
+    }
+
+    /** Shows every product, listed by product ID (sorted with Quick Sort). */
     public void viewInventory() {
-        System.out.println("\n=== PRODUCT INVENTORY ===");
-        Inventory.displayProducts(inventory.getProducts());
+        System.out.println("\n=== PRODUCT INVENTORY (by product ID) ===");
+        ArrayList<Product> products = inventory.getProducts();
+        SortAlgorithms.quickSort(products, SortAlgorithms.BY_ID);
+        Inventory.displayProducts(products);
     }
 
     public void searchProducts() {
@@ -27,21 +58,21 @@ public abstract class User {
         System.out.println("\nSearch by:");
         System.out.println("[1] Product ID (Binary Search)");
         System.out.println("[2] Flavor keyword (Linear Search)");
-        int choice = InputHelper.readInt("Choice: ", 1, 2);
+        int choice = InputHelper.readInt("Choice (or C to cancel): ", 1, 2);
 
         if (choice == 1) {
-            String id = InputHelper.readProductId("Enter product ID: ");
-            IceCream found = SearchAlgorithms.binarySearchById(inventory.getProducts(), id);
+            String id = InputHelper.readProductId("Enter product ID (or C to cancel): ");
+            Product found = SearchAlgorithms.binarySearchById(inventory.getProducts(), id);
             if (found == null) {
                 System.out.println("No product found with ID " + id + ".");
             } else {
-                ArrayList<IceCream> result = new ArrayList<>();
+                ArrayList<Product> result = new ArrayList<>();
                 result.add(found);
                 Inventory.displayProducts(result);
             }
         } else {
-            String keyword = InputHelper.readNonEmpty("Enter flavor keyword: ");
-            ArrayList<IceCream> matches = SearchAlgorithms.linearSearchByFlavor(inventory.getProducts(), keyword);
+            String keyword = InputHelper.readText("Enter flavor keyword (or C to cancel): ");
+            ArrayList<Product> matches = SearchAlgorithms.linearSearchByFlavor(inventory.getProducts(), keyword);
             if (matches.isEmpty()) {
                 System.out.println("No product flavor contains \"" + keyword + "\".");
             } else {
@@ -51,50 +82,19 @@ public abstract class User {
         }
     }
 
-    /** Sorts a copy of the inventory, so the stored order of products is not changed. */
+    /**
+     * Sorts a copy of the inventory by price (lowest first) using Insertion Sort.
+     * No algorithm menu is shown. Insertion Sort is stable, so products with the same
+     * price keep their original order.
+     */
     public void sortProducts() {
         if (inventory.isEmpty()) {
             System.out.println("The inventory is empty. Nothing to sort.");
             return;
         }
-        System.out.println("\nSort by:");
-        System.out.println("[1] Product ID");
-        System.out.println("[2] Flavor (A-Z)");
-        System.out.println("[3] Price (lowest first)");
-        System.out.println("[4] Stock quantity (lowest first)");
-        int keyChoice = InputHelper.readInt("Choice: ", 1, 4);
-        Comparator<IceCream> comparator;
-        switch (keyChoice) {
-            case 1:
-                comparator = SortAlgorithms.BY_ID;
-                break;
-            case 2:
-                comparator = SortAlgorithms.BY_FLAVOR;
-                break;
-            case 3:
-                comparator = SortAlgorithms.BY_PRICE;
-                break;
-            default:
-                comparator = SortAlgorithms.BY_QUANTITY;
-        }
-
-        System.out.println("\nSorting algorithm:");
-        System.out.println("[1] Merge Sort");
-        System.out.println("[2] Quick Sort");
-        System.out.println("[3] Insertion Sort");
-        int algorithmChoice = InputHelper.readInt("Choice: ", 1, 3);
-
-        ArrayList<IceCream> sorted = inventory.getProducts();
-        if (algorithmChoice == 1) {
-            SortAlgorithms.mergeSort(sorted, comparator);
-            System.out.println("Sorted with Merge Sort:");
-        } else if (algorithmChoice == 2) {
-            SortAlgorithms.quickSort(sorted, comparator);
-            System.out.println("Sorted with Quick Sort:");
-        } else {
-            SortAlgorithms.insertionSort(sorted, comparator);
-            System.out.println("Sorted with Insertion Sort:");
-        }
+        ArrayList<Product> sorted = inventory.getProducts();
+        SortAlgorithms.insertionSort(sorted, SortAlgorithms.BY_PRICE);
+        System.out.println("\nSorting complete: products sorted by price (lowest to highest) using Insertion Sort.");
         Inventory.displayProducts(sorted);
     }
 }

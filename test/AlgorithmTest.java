@@ -1,11 +1,9 @@
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.Queue;
 
 /**
- * Plain-Java checks for the sorting, searching and data structure logic (no JUnit needed).
+ * Plain-Java checks for the sorting, searching, inventory and order-queue logic (no JUnit needed).
  * Prints PASS/FAIL for each check and a summary at the end.
  */
 public class AlgorithmTest {
@@ -17,9 +15,11 @@ public class AlgorithmTest {
         testEmptyAndSingleItemSorting();
         testLinearSearch();
         testBinarySearch();
+        testPriceValidation();
         testInventory();
-        testUndoStack();
-        testQueueIsFifo();
+        testOrderQueue();
+        testCancelOrder();
+        testStack();
 
         System.out.println("\n" + passed + " passed, " + failed + " failed.");
         if (failed > 0) {
@@ -27,22 +27,44 @@ public class AlgorithmTest {
         }
     }
 
-    private static ArrayList<IceCream> sampleProducts() {
-        ArrayList<IceCream> list = new ArrayList<>();
-        list.add(new IceCream("IC003", "Chocolate", 'M', 40, 65.00, "Cup"));
-        list.add(new IceCream("IC001", "Vanilla", 'S', 50, 45.00, "Cone"));
-        list.add(new IceCream("IC005", "Strawberry", 'L', 15, 85.00, "Cup"));
-        list.add(new IceCream("IC002", "Mango", 'M', 25, 60.00, "Cone"));
-        list.add(new IceCream("IC004", "Cookies and Cream", 'L', 30, 90.00, "Cup"));
+    private static ArrayList<Product> sampleProducts() {
+        ArrayList<Product> list = new ArrayList<>();
+        list.add(new Product("IC003", "Chocolate", 'M', 40, 65.00, "Cup"));
+        list.add(new Product("IC001", "Vanilla", 'S', 50, 45.00, "Cone"));
+        list.add(new Product("IC005", "Strawberry", 'L', 15, 85.00, "Cup"));
+        list.add(new Product("IC002", "Mango", 'M', 25, 60.00, "Cone"));
+        list.add(new Product("IC004", "Cookies and Cream", 'L', 30, 90.00, "Cup"));
         return list;
     }
 
-    private static String ids(ArrayList<IceCream> list) {
+    private static Inventory sampleInventory() {
+        Inventory inventory = new Inventory();
+        for (Product product : sampleProducts()) {
+            inventory.addProduct(product);
+        }
+        return inventory;
+    }
+
+    private static String ids(ArrayList<Product> list) {
         StringBuilder builder = new StringBuilder();
-        for (IceCream product : list) {
+        for (Product product : list) {
             builder.append(product.getProductId()).append(' ');
         }
         return builder.toString().trim();
+    }
+
+    private static String orderIds(ArrayList<Order> orders) {
+        StringBuilder builder = new StringBuilder();
+        for (Order order : orders) {
+            builder.append(order.getOrderId()).append(' ');
+        }
+        return builder.toString().trim();
+    }
+
+    private static ArrayList<OrderItem> items(Inventory inventory, String productId, int quantity) {
+        ArrayList<OrderItem> list = new ArrayList<>();
+        list.add(new OrderItem(inventory.findById(productId), quantity));
+        return list;
     }
 
     private static void check(String name, boolean condition) {
@@ -55,44 +77,50 @@ public class AlgorithmTest {
         }
     }
 
-    private static void checkAllSorts(String keyName, Comparator<IceCream> comparator, String expected) {
-        ArrayList<IceCream> merge = sampleProducts();
+    private static void checkAllSorts(String keyName, Comparator<Product> comparator, String expected) {
+        ArrayList<Product> insertion = sampleProducts();
+        SortAlgorithms.insertionSort(insertion, comparator);
+        check("Insertion Sort by " + keyName + " -> " + ids(insertion), ids(insertion).equals(expected));
+
+        ArrayList<Product> merge = sampleProducts();
         SortAlgorithms.mergeSort(merge, comparator);
         check("Merge Sort by " + keyName + " -> " + ids(merge), ids(merge).equals(expected));
 
-        ArrayList<IceCream> quick = sampleProducts();
+        ArrayList<Product> quick = sampleProducts();
         SortAlgorithms.quickSort(quick, comparator);
         check("Quick Sort by " + keyName + " -> " + ids(quick), ids(quick).equals(expected));
-
-        ArrayList<IceCream> insertion = sampleProducts();
-        SortAlgorithms.insertionSort(insertion, comparator);
-        check("Insertion Sort by " + keyName + " -> " + ids(insertion), ids(insertion).equals(expected));
     }
 
     private static void testSorting() {
-        checkAllSorts("ID", SortAlgorithms.BY_ID, "IC001 IC002 IC003 IC004 IC005");
-        checkAllSorts("flavor", SortAlgorithms.BY_FLAVOR, "IC003 IC004 IC002 IC005 IC001");
         checkAllSorts("price", SortAlgorithms.BY_PRICE, "IC001 IC002 IC003 IC005 IC004");
-        checkAllSorts("quantity", SortAlgorithms.BY_QUANTITY, "IC005 IC002 IC004 IC003 IC001");
+        checkAllSorts("ID", SortAlgorithms.BY_ID, "IC001 IC002 IC003 IC004 IC005");
+
+        ArrayList<Product> ties = new ArrayList<>();
+        ties.add(new Product("IC009", "Ube", 'S', 1, 50.00, "Cone"));
+        ties.add(new Product("IC007", "Mocha", 'S', 1, 40.00, "Cone"));
+        ties.add(new Product("IC008", "Avocado", 'S', 1, 50.00, "Cup"));
+        SortAlgorithms.insertionSort(ties, SortAlgorithms.BY_PRICE);
+        check("Insertion Sort keeps equal prices in original order (stable)",
+                ids(ties).equals("IC007 IC009 IC008"));
     }
 
     private static void testEmptyAndSingleItemSorting() {
-        ArrayList<IceCream> empty = new ArrayList<>();
+        ArrayList<Product> empty = new ArrayList<>();
+        SortAlgorithms.insertionSort(empty, SortAlgorithms.BY_PRICE);
         SortAlgorithms.mergeSort(empty, SortAlgorithms.BY_ID);
         SortAlgorithms.quickSort(empty, SortAlgorithms.BY_ID);
-        SortAlgorithms.insertionSort(empty, SortAlgorithms.BY_ID);
         check("All sorts handle an empty list", empty.isEmpty());
 
-        ArrayList<IceCream> single = new ArrayList<>();
-        single.add(new IceCream("IC009", "Ube", 'S', 1, 30.00, "Cone"));
+        ArrayList<Product> single = new ArrayList<>();
+        single.add(new Product("IC009", "Ube", 'S', 1, 30.00, "Cone"));
+        SortAlgorithms.insertionSort(single, SortAlgorithms.BY_PRICE);
         SortAlgorithms.mergeSort(single, SortAlgorithms.BY_PRICE);
         SortAlgorithms.quickSort(single, SortAlgorithms.BY_PRICE);
-        SortAlgorithms.insertionSort(single, SortAlgorithms.BY_PRICE);
         check("All sorts handle a single-item list", ids(single).equals("IC009"));
     }
 
     private static void testLinearSearch() {
-        ArrayList<IceCream> list = sampleProducts();
+        ArrayList<Product> list = sampleProducts();
         check("Linear search 'co' finds Chocolate and Cookies and Cream",
                 ids(SearchAlgorithms.linearSearchByFlavor(list, "co")).equals("IC003 IC004"));
         check("Linear search is case-insensitive",
@@ -104,74 +132,132 @@ public class AlgorithmTest {
     }
 
     private static void testBinarySearch() {
-        ArrayList<IceCream> list = sampleProducts(); // deliberately unsorted
+        ArrayList<Product> list = sampleProducts(); // deliberately unsorted
         boolean allFound = true;
         for (String id : new String[] { "IC001", "IC002", "IC003", "IC004", "IC005" }) {
-            IceCream found = SearchAlgorithms.binarySearchById(list, id);
+            Product found = SearchAlgorithms.binarySearchById(list, id);
             if (found == null || !found.getProductId().equals(id)) {
                 allFound = false;
             }
         }
         check("Binary search finds every ID in an unsorted inventory", allFound);
-        check("Binary search returns null for missing ID",
-                SearchAlgorithms.binarySearchById(list, "IC999") == null);
+        check("Binary search returns null for missing ID", SearchAlgorithms.binarySearchById(list, "IC999") == null);
         check("Binary search on empty list returns null",
                 SearchAlgorithms.binarySearchById(new ArrayList<>(), "IC001") == null);
-        check("Binary search does not reorder the inventory",
-                ids(list).equals("IC003 IC001 IC005 IC002 IC004"));
+        check("Binary search does not reorder the inventory", ids(list).equals("IC003 IC001 IC005 IC002 IC004"));
+    }
+
+    private static boolean constructorRejects(double price) {
+        try {
+            new Product("IC010", "Test", 'S', 1, price, "Cup");
+            return false;
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
+    }
+
+    private static void testPriceValidation() {
+        check("Price 30.00 (minimum) is valid", Product.isValidPrice(30.00));
+        check("Price 120.00 (maximum) is valid", Product.isValidPrice(120.00));
+        check("Price 29.99 is invalid", !Product.isValidPrice(29.99));
+        check("Price 120.01 is invalid", !Product.isValidPrice(120.01));
+        check("Product cannot be created with price 25.00", constructorRejects(25.00));
+        check("Product cannot be created with price 150.00", constructorRejects(150.00));
+
+        Inventory inventory = sampleInventory();
+        check("updatePrice accepts 120.00", inventory.updatePrice("IC001", 120.00)
+                && inventory.findById("IC001").getPrice() == 120.00);
+        check("updatePrice rejects 10.00 and keeps the old price",
+                !inventory.updatePrice("IC001", 10.00) && inventory.findById("IC001").getPrice() == 120.00);
+        check("updatePrice rejects 130.00", !inventory.updatePrice("IC001", 130.00));
+        check("updatePrice on missing ID fails", !inventory.updatePrice("IC404", 50.00));
     }
 
     private static void testInventory() {
         Inventory inventory = new Inventory();
         check("New inventory is empty", inventory.isEmpty());
-        check("Add product", inventory.addProduct(new IceCream("IC001", "Vanilla", 'S', 10, 45.0, "Cone")));
-        check("Duplicate ID is rejected",
-                !inventory.addProduct(new IceCream("IC001", "Other", 'M', 5, 50.0, "Cup")));
+        check("Add product", inventory.addProduct(new Product("IC001", "Vanilla", 'S', 10, 45.0, "Cone")));
+        check("Duplicate ID is rejected", !inventory.addProduct(new Product("IC001", "Other", 'M', 5, 50.0, "Cup")));
+        check("Negative stock product is rejected",
+                !inventory.addProduct(new Product("IC002", "Mango", 'M', -1, 50.0, "Cup")));
         check("HashMap lookup finds product", inventory.findById("IC001").getFlavor().equals("Vanilla"));
         check("Lookup of missing ID returns null", inventory.findById("IC404") == null);
-        check("Adjust stock +5", inventory.adjustStock("IC001", 5) && inventory.findById("IC001").getQuantity() == 15);
+        check("updateQuantity sets stock", inventory.updateQuantity("IC001", 15)
+                && inventory.findById("IC001").getQuantity() == 15);
+        check("updateQuantity rejects negative", !inventory.updateQuantity("IC001", -1));
         check("Stock cannot go negative", !inventory.adjustStock("IC001", -16));
-        check("Stock cannot exceed max", !inventory.adjustStock("IC001", Inventory.MAX_STOCK));
-        check("Adjust stock on missing ID fails", !inventory.adjustStock("IC404", 1));
         check("Remove missing ID returns null", inventory.removeProduct("IC404") == null);
         check("Remove existing product", inventory.removeProduct("IC001") != null && inventory.isEmpty());
     }
 
-    private static void testUndoStack() {
-        Inventory inventory = new Inventory();
-        inventory.addProduct(new IceCream("IC001", "Vanilla", 'S', 10, 45.0, "Cone"));
-        inventory.addProduct(new IceCream("IC002", "Mango", 'M', 10, 60.0, "Cone"));
-        inventory.removeProduct("IC001");
-        inventory.removeProduct("IC002");
-        // ArrayDeque stack: last removed (IC002) comes back first
-        check("Undo restores the most recent removal first (LIFO)",
-                inventory.undoLastRemoval().getProductId().equals("IC002"));
-        check("Second undo restores the earlier removal",
-                inventory.undoLastRemoval().getProductId().equals("IC001"));
-        check("Undo stack is empty afterwards", !inventory.hasRemovedProducts());
+    private static void testOrderQueue() {
+        Inventory inventory = sampleInventory();
+        IceCreamMaker maker = new IceCreamMaker(inventory);
 
-        inventory.removeProduct("IC001");
-        inventory.addProduct(new IceCream("IC001", "New Vanilla", 'L', 3, 70.0, "Cup"));
-        check("Undo is refused when the ID was reused", inventory.undoLastRemoval() == null);
+        check("Empty queue: completeNextOrder returns null", maker.completeNextOrder() == null);
+        check("Order with no items is rejected", maker.placeOrder(new ArrayList<>()) == null);
+        check("Order for more than the stock is rejected and stock unchanged",
+                maker.placeOrder(items(inventory, "IC005", 16)) == null
+                        && inventory.findById("IC005").getQuantity() == 15);
+
+        ArrayList<OrderItem> twoLines = items(inventory, "IC005", 10);
+        twoLines.add(new OrderItem(inventory.findById("IC005"), 6));
+        check("Same product twice exceeding stock in total is rejected", maker.placeOrder(twoLines) == null);
+
+        Order first = maker.placeOrder(items(inventory, "IC001", 5));
+        ArrayList<OrderItem> multi = items(inventory, "IC003", 2);
+        multi.add(new OrderItem(inventory.findById("IC002"), 1));
+        Order second = maker.placeOrder(multi);
+        Order third = maker.placeOrder(items(inventory, "IC005", 15));
+
+        check("Order IDs are unique and readable", first.getOrderId().equals("ORD-001")
+                && second.getOrderId().equals("ORD-002") && third.getOrderId().equals("ORD-003"));
+        check("Multi-item order total = 2x65 + 1x60", second.getTotal() == 190.0);
+        check("Stock is reserved when orders are placed", inventory.findById("IC001").getQuantity() == 45
+                && inventory.findById("IC003").getQuantity() == 38 && inventory.findById("IC005").getQuantity() == 0);
+        check("No more stock can be ordered after it is all reserved",
+                maker.placeOrder(items(inventory, "IC005", 1)) == null);
+        check("Product in a pending order is detected", maker.hasPendingOrderFor("IC002"));
+
+        check("FIFO: first processed is ORD-001", maker.completeNextOrder() == first);
+        check("FIFO: second processed is ORD-002", maker.completeNextOrder() == second);
+        check("FIFO: third processed is ORD-003", maker.completeNextOrder() == third);
+        check("Queue is empty after processing all", maker.getPendingOrders().isEmpty());
+        check("Processing does not change reserved stock", inventory.findById("IC001").getQuantity() == 45);
     }
 
-    private static void testQueueIsFifo() {
-        // Same queue type and operations used by IceCreamMaker
-        IceCream product = new IceCream("IC001", "Vanilla", 'S', 10, 45.0, "Cone");
-        Queue<Order> queue = new LinkedList<>();
-        queue.offer(new Order(1, product, 1));
-        queue.offer(new Order(2, product, 2));
-        queue.offer(new Order(3, product, 3));
-        boolean fifo = queue.poll().getOrderNumber() == 1
-                && queue.poll().getOrderNumber() == 2
-                && queue.poll().getOrderNumber() == 3;
-        check("Queue processes orders first in, first out", fifo);
-        check("Polling an empty queue returns null instead of crashing", queue.poll() == null);
-        check("Order total = price x quantity", new Order(4, product, 3).getTotal() == 135.0);
+    private static void testCancelOrder() {
+        Inventory inventory = sampleInventory();
+        IceCreamMaker maker = new IceCreamMaker(inventory);
+        maker.placeOrder(items(inventory, "IC001", 1));
+        maker.placeOrder(items(inventory, "IC002", 4));
+        maker.placeOrder(items(inventory, "IC003", 1));
+        maker.placeOrder(items(inventory, "IC004", 1));
 
-        ArrayDeque<String> stack = new ArrayDeque<>();
-        stack.push("first");
-        stack.push("second");
-        check("ArrayDeque push/pop behaves as a stack", stack.pop().equals("second"));
+        check("Cancel missing order ID returns null and changes nothing",
+                maker.cancelPendingOrder("ORD-999") == null
+                        && orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-002 ORD-003 ORD-004"));
+        check("Cancel ORD-002 removes only that order",
+                maker.cancelPendingOrder("ORD-002") != null
+                        && orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-003 ORD-004"));
+        check("Cancelling returns the reserved stock", inventory.findById("IC002").getQuantity() == 25);
+        check("Cancelled order cannot be cancelled again", maker.cancelPendingOrder("ORD-002") == null);
+        check("Cancel the last order keeps FIFO order of the rest",
+                maker.cancelPendingOrder("ORD-004") != null
+                        && orderIds(maker.getPendingOrders()).equals("ORD-001 ORD-003"));
+        check("Next processed after cancelling is still the oldest (ORD-001)",
+                maker.completeNextOrder().getOrderId().equals("ORD-001"));
+        check("Cancel on empty queue returns null", new IceCreamMaker(inventory).cancelPendingOrder("ORD-001") == null);
+    }
+
+    private static void testStack() {
+        // Same ArrayDeque operations the Cashier uses for "U = undo last item"
+        Inventory inventory = sampleInventory();
+        ArrayDeque<OrderItem> cart = new ArrayDeque<>();
+        cart.push(new OrderItem(inventory.findById("IC001"), 1));
+        cart.push(new OrderItem(inventory.findById("IC002"), 2));
+        check("ArrayDeque pop() undoes the most recent item (LIFO)",
+                cart.pop().getProduct().getProductId().equals("IC002"));
+        check("Remaining item is the first one added", cart.peek().getProduct().getProductId().equals("IC001"));
     }
 }

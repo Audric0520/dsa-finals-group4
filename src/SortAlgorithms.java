@@ -3,24 +3,42 @@ import java.util.Comparator;
 
 /**
  * Hand-written sorting algorithms. Each method sorts the given list in ascending
- * order according to the comparator (for example by price or by flavor).
+ * order according to the comparator.
+ *
+ * Where each one is used:
+ *   Insertion Sort - "Sort products" menu option (sorts by price, lowest first)
+ *   Quick Sort     - "View inventory" (lists products by product ID)
+ *   Merge Sort     - Binary Search (sorts a copy by product ID before searching)
  */
 public class SortAlgorithms {
 
-    public static final Comparator<IceCream> BY_ID = Comparator.comparing(IceCream::getProductId);
-    public static final Comparator<IceCream> BY_FLAVOR = Comparator.comparing(p -> p.getFlavor().toLowerCase());
-    public static final Comparator<IceCream> BY_PRICE = Comparator.comparingDouble(IceCream::getPrice);
-    public static final Comparator<IceCream> BY_QUANTITY = Comparator.comparingInt(IceCream::getQuantity);
+    public static final Comparator<Product> BY_ID = Comparator.comparing(Product::getProductId);
+    public static final Comparator<Product> BY_PRICE = Comparator.comparingDouble(Product::getPrice);
+
+    // ---------------- Insertion Sort: O(n^2), simple, stable, good for small lists ----------------
+
+    public static void insertionSort(ArrayList<Product> list, Comparator<Product> comparator) {
+        for (int i = 1; i < list.size(); i++) {
+            Product current = list.get(i);
+            int j = i - 1;
+            // Shift bigger items one place to the right to make room for "current"
+            while (j >= 0 && comparator.compare(list.get(j), current) > 0) {
+                list.set(j + 1, list.get(j));
+                j--;
+            }
+            list.set(j + 1, current);
+        }
+    }
 
     // ---------------- Merge Sort: O(n log n), stable ----------------
 
-    public static void mergeSort(ArrayList<IceCream> list, Comparator<IceCream> comparator) {
+    public static void mergeSort(ArrayList<Product> list, Comparator<Product> comparator) {
         if (list.size() <= 1) {
             return;
         }
         int middle = list.size() / 2;
-        ArrayList<IceCream> left = new ArrayList<>(list.subList(0, middle));
-        ArrayList<IceCream> right = new ArrayList<>(list.subList(middle, list.size()));
+        ArrayList<Product> left = new ArrayList<>(list.subList(0, middle));
+        ArrayList<Product> right = new ArrayList<>(list.subList(middle, list.size()));
 
         mergeSort(left, comparator);
         mergeSort(right, comparator);
@@ -28,8 +46,8 @@ public class SortAlgorithms {
     }
 
     // Combines two sorted halves back into the original list.
-    private static void merge(ArrayList<IceCream> list, ArrayList<IceCream> left, ArrayList<IceCream> right,
-            Comparator<IceCream> comparator) {
+    private static void merge(ArrayList<Product> list, ArrayList<Product> left, ArrayList<Product> right,
+            Comparator<Product> comparator) {
         int i = 0;
         int j = 0;
         int k = 0;
@@ -51,11 +69,11 @@ public class SortAlgorithms {
 
     // ---------------- Quick Sort: O(n log n) average, in place ----------------
 
-    public static void quickSort(ArrayList<IceCream> list, Comparator<IceCream> comparator) {
+    public static void quickSort(ArrayList<Product> list, Comparator<Product> comparator) {
         quickSort(list, comparator, 0, list.size() - 1);
     }
 
-    private static void quickSort(ArrayList<IceCream> list, Comparator<IceCream> comparator, int low, int high) {
+    private static void quickSort(ArrayList<Product> list, Comparator<Product> comparator, int low, int high) {
         if (low < high) {
             int pivotIndex = partition(list, comparator, low, high);
             quickSort(list, comparator, low, pivotIndex - 1);
@@ -64,8 +82,8 @@ public class SortAlgorithms {
     }
 
     // Lomuto partition: the last element is the pivot. Smaller items move to its left.
-    private static int partition(ArrayList<IceCream> list, Comparator<IceCream> comparator, int low, int high) {
-        IceCream pivot = list.get(high);
+    private static int partition(ArrayList<Product> list, Comparator<Product> comparator, int low, int high) {
+        Product pivot = list.get(high);
         int i = low - 1;
         for (int j = low; j < high; j++) {
             if (comparator.compare(list.get(j), pivot) <= 0) {
@@ -77,24 +95,9 @@ public class SortAlgorithms {
         return i + 1;
     }
 
-    private static void swap(ArrayList<IceCream> list, int a, int b) {
-        IceCream temp = list.get(a);
+    private static void swap(ArrayList<Product> list, int a, int b) {
+        Product temp = list.get(a);
         list.set(a, list.get(b));
         list.set(b, temp);
-    }
-
-    // ---------------- Insertion Sort: O(n^2), simple, good for small lists ----------------
-
-    public static void insertionSort(ArrayList<IceCream> list, Comparator<IceCream> comparator) {
-        for (int i = 1; i < list.size(); i++) {
-            IceCream current = list.get(i);
-            int j = i - 1;
-            // Shift bigger items one place to the right to make room for "current"
-            while (j >= 0 && comparator.compare(list.get(j), current) > 0) {
-                list.set(j + 1, list.get(j));
-                j--;
-            }
-            list.set(j + 1, current);
-        }
     }
 }

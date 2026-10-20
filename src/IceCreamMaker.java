@@ -1,13 +1,14 @@
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
 /**
- * IceCreamMaker: can view, search and sort the inventory, and handles the
- * pending order queue in FIFO (first in, first out) order.
+ * IceCreamMaker: views, searches and sorts the inventory, and owns the queue of
+ * pending orders. Orders are processed FIFO (first in, first out).
  *
- * Stock is reserved (subtracted) when an order is added to the queue, so two
- * orders can never use the same stock. Canceling an order gives the stock back.
+ * Stock policy: stock is reserved (subtracted) when the Cashier places an order, so
+ * pending orders can never ask for more than what is in stock. Processing an order
+ * just completes it. Cancelling an order gives its reserved stock back.
  */
 public class IceCreamMaker extends User {
     private final Queue<Order> pendingOrders = new LinkedList<>();
@@ -18,76 +19,137 @@ public class IceCreamMaker extends User {
     }
 
     @Override
-    public void showMenu() {
-        boolean running = true;
-        while (running) {
-            System.out.println("\n===== ICE CREAM MAKER MENU =====");
-            System.out.println("[1] View inventory");
-            System.out.println("[2] Search products");
-            System.out.println("[3] Sort products");
-            System.out.println("[4] Add new order to queue");
-            System.out.println("[5] View pending orders");
-            System.out.println("[6] Process next order");
-            System.out.println("[7] Cancel an order");
-            System.out.println("[0] Log out");
-            int choice = InputHelper.readInt("Choice: ", 0, 7);
+    protected String getRoleName() {
+        return Authentication.ICE_CREAM_MAKER;
+    }
 
-            switch (choice) {
-                case 1:
-                    viewInventory();
-                    break;
-                case 2:
-                    searchProducts();
-                    break;
-                case 3:
-                    sortProducts();
-                    break;
-                case 4:
-                    addOrder();
-                    break;
-                case 5:
-                    viewPendingOrders();
-                    break;
-                case 6:
-                    processNextOrder();
-                    break;
-                case 7:
-                    cancelOrder();
-                    break;
-                default:
-                    running = false;
+    @Override
+    protected void printMenu() {
+        System.out.println("========== ICE CREAM MAKER MENU ==========");
+        System.out.println("[1] View inventory");
+        System.out.println("[2] Search products");
+        System.out.println("[3] Sort products");
+        System.out.println("[4] View pending orders");
+        System.out.println("[5] Cancel an order");
+        System.out.println("[6] Process next order");
+        System.out.println("[0] Log out");
+    }
+
+    @Override
+    protected int getLastOption() {
+        return 6;
+    }
+
+    @Override
+    protected void handleChoice(int choice) {
+        switch (choice) {
+            case 1:
+                viewInventory();
+                break;
+            case 2:
+                searchProducts();
+                break;
+            case 3:
+                sortProducts();
+                break;
+            case 4:
+                displayPendingOrders();
+                break;
+            case 5:
+                cancelOrderFromMenu();
+                break;
+            case 6:
+                processNextOrderFromMenu();
+                break;
+            default:
+                break;
+        }
+    }
+
+    // ===================== Queue operations (also used by the Cashier) =====================
+
+    /**
+     * Reserves stock for every item and adds a new order to the back of the queue.
+     * Returns the new order, or null (and changes nothing) if the items are empty or
+     * there is not enough stock for all of them.
+     */
+    public Order placeOrder(ArrayList<OrderItem> items) {
+        if (items.isEmpty() || !hasEnoughStock(items)) {
+            return null;
+        }
+        for (OrderItem item : items) {
+            inventory.adjustStock(item.getProduct().getProductId(), -item.getQuantity());
+        }
+        Order order = new Order(String.format("ORD-%03d", nextOrderNumber++), items);
+        pendingOrders.offer(order);
+        return order;
+    }
+
+    // Checks the total asked for each product (the same product may appear in several items).
+    private boolean hasEnoughStock(ArrayList<OrderItem> items) {
+        for (OrderItem item : items) {
+            Product product = item.getProduct();
+            if (item.getQuantity() <= 0 || inventory.findById(product.getProductId()) != product) {
+                return false;
+            }
+            int totalWanted = 0;
+            for (OrderItem other : items) {
+                if (other.getProduct() == product) {
+                    totalWanted += other.getQuantity();
+                }
+            }
+            if (totalWanted > product.getQuantity()) {
+                return false;
             }
         }
-        System.out.println("Ice Cream Maker logged out.");
+        return true;
     }
 
-    private void addOrder() {
-        System.out.println("\n--- Add Order ---");
-        if (inventory.isEmpty()) {
-            System.out.println("The inventory is empty. No orders can be made.");
-            return;
-        }
-        String id = InputHelper.readProductId("Product ID: ");
-        IceCream product = inventory.findById(id);
-        if (product == null) {
-            System.out.println("No product found with ID " + id + ".");
-            return;
-        }
-        if (product.getQuantity() == 0) {
-            System.out.println(product.getFlavor() + " is out of stock.");
-            return;
-        }
-        int quantity = InputHelper.readInt("Quantity (1-" + product.getQuantity() + "): ", 1,
-                product.getQuantity());
-
-        inventory.adjustStock(id, -quantity); // reserve the stock
-        Order order = new Order(nextOrderNumber++, product, quantity);
-        pendingOrders.offer(order);
-        System.out.println("Added to queue: " + order);
-        System.out.println("Orders waiting: " + pendingOrders.size());
+    /** Removes and returns the oldest order (FIFO), or null if the queue is empty. */
+    public Order completeNextOrder() {
+        return pendingOrders.poll();
     }
 
-    private void viewPendingOrders() {
+    /**
+     * Removes only the order with the given ID and gives its reserved stock back.
+     * The queue is rotated once: every order is taken from the front and put back at the
+     * end, except the one being cancelled, so the remaining orders keep their FIFO order.
+     * Returns the cancelled order, or null if no pending order has that ID.
+     */
+    public Order cancelPendingOrder(String orderId) {
+        Order cancelled = null;
+        int size = pendingOrders.size();
+        for (int i = 0; i < size; i++) {
+            Order order = pendingOrders.poll();
+            if (cancelled == null && order.getOrderId().equals(orderId)) {
+                cancelled = order;
+            } else {
+                pendingOrders.offer(order);
+            }
+        }
+        if (cancelled != null) {
+            for (OrderItem item : cancelled.getItems()) {
+                inventory.adjustStock(item.getProduct().getProductId(), item.getQuantity());
+            }
+        }
+        return cancelled;
+    }
+
+    /** Used by the Manager: a product that is part of a pending order cannot be removed. */
+    public boolean hasPendingOrderFor(String productId) {
+        for (Order order : pendingOrders) {
+            if (order.containsProduct(productId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public ArrayList<Order> getPendingOrders() {
+        return new ArrayList<>(pendingOrders);
+    }
+
+    public void displayPendingOrders() {
         System.out.println("\n--- Pending Orders (first = next to process) ---");
         if (pendingOrders.isEmpty()) {
             System.out.println("No pending orders.");
@@ -100,52 +162,37 @@ public class IceCreamMaker extends User {
         }
     }
 
-    /** Shows the order at the front of the queue (FIFO) and removes it once confirmed. */
-    private void processNextOrder() {
-        Order order = pendingOrders.peek(); // look at the oldest order without removing it
-        if (order == null) {
+    // ===================== Menu actions =====================
+
+    private void processNextOrderFromMenu() {
+        Order next = pendingOrders.peek(); // look at the oldest order without removing it
+        if (next == null) {
             System.out.println("No pending orders to process.");
             return;
         }
-        System.out.println("Next order: " + order);
-        if (!InputHelper.readYesNo("Process this order? (Y/N): ")) {
-            System.out.println("Order left in the queue.");
+        System.out.println("\nNext order: " + next);
+        if (!InputHelper.readYesNo("Process this order? (Y/N, or C to cancel): ")) {
+            System.out.println("Order " + next.getOrderId() + " was left in the queue.");
             return;
         }
-        pendingOrders.poll();
-        System.out.println("Processed: " + order);
+        completeNextOrder();
+        System.out.println("Order " + next.getOrderId() + " processed successfully.");
         System.out.println("Orders still waiting: " + pendingOrders.size());
     }
 
-    private void cancelOrder() {
+    private void cancelOrderFromMenu() {
         if (pendingOrders.isEmpty()) {
             System.out.println("No pending orders to cancel.");
             return;
         }
-        viewPendingOrders();
-        int orderNumber = InputHelper.readInt("Order # to cancel: ", 1, Integer.MAX_VALUE);
-
-        Iterator<Order> iterator = pendingOrders.iterator();
-        while (iterator.hasNext()) {
-            Order order = iterator.next();
-            if (order.getOrderNumber() == orderNumber) {
-                iterator.remove();
-                returnStock(order);
-                System.out.println("Canceled: Order #" + orderNumber);
-                return;
-            }
-        }
-        System.out.println("No pending order #" + orderNumber + ".");
-    }
-
-    // Gives reserved stock back. If the Manager removed the product meanwhile, there is nothing to return to.
-    private void returnStock(Order order) {
-        String id = order.getProduct().getProductId();
-        if (inventory.findById(id) == order.getProduct() && inventory.adjustStock(id, order.getQuantity())) {
-            System.out.println(order.getQuantity() + " returned to stock of " + id + ".");
+        displayPendingOrders();
+        String orderId = InputHelper.readText("Enter order ID to cancel, e.g. ORD-001 (or C to cancel): ")
+                .toUpperCase();
+        Order cancelled = cancelPendingOrder(orderId);
+        if (cancelled == null) {
+            System.out.println("No pending order with ID " + orderId + ". Nothing was cancelled.");
         } else {
-            System.out.println("Stock not returned: product " + id + " is no longer in the inventory"
-                    + " or would exceed the stock limit.");
+            System.out.println("Order " + orderId + " cancelled. Reserved stock was returned to the inventory.");
         }
     }
 }

@@ -1,61 +1,83 @@
 # SC Ice Cream Management System
 
-A Java console application for managing the ice cream inventory and the pending orders of a small ice cream shop.
+A Java console application for managing the ice cream inventory and the pending customer orders of a small ice cream shop.
 It is written in plain Java with no external libraries.
 
-## 1. Requirement Analysis
+## 1. Summary of the Revision
+
+| Feedback | Correction |
+|---|---|
+| Role passwords | `Authentication` stores the three password constants. Each role menu needs its own password. A wrong password can be retried, `C` cancels back to the main menu, and passwords are never printed. |
+| Price limits | Prices must be from **P30.00 to P120.00**, inclusive. The rule is checked in three places: at input (`InputHelper.readPrice`), in the inventory logic (`Inventory.addProduct` / `updatePrice`), and in the model (`Product.setPrice` throws on an invalid price). This covers both add and update. |
+| Sorting | **Sort products** runs Insertion Sort by price (lowest first) straight away and prints a confirmation. There is no algorithm menu, and the behaviour is the same for every role. |
+| Orders | The **Cashier** enters customer orders (one or more products) and views pending orders. The **Ice Cream Maker** views, cancels and processes orders (FIFO). |
+| Menus | All three menus match the required layout and order. `[0]` is always Log out. |
+| Cancel input | Typing `C` at any prompt inside an operation cancels it and returns to the role menu, without saving partial data. |
+| Order cancellation | Only the selected order is removed. The rest keep their FIFO order, and its reserved stock is returned. |
+
+## 2. Requirement Analysis and Design Decisions
 
 **Roles**
 
-| Role | Can do |
-|------|--------|
-| Manager | View, add, update, and remove products; undo the last removal; adjust stock; search; sort |
-| Cashier | View, search, and sort the inventory only |
-| IceCreamMaker | View, search, and sort; add orders to the queue; view the queue; process the next order (FIFO); cancel an order |
+| Role | Menu |
+|---|---|
+| Manager | View inventory, Sort products, Search products, Add product, Update product details, Remove product, Log out |
+| Cashier | View inventory, Search products, Sort products, Add new order to queue, View pending orders, Log out |
+| Ice Cream Maker | View inventory, Search products, Sort products, View pending orders, Cancel an order, Process next order, Log out |
 
-**Product fields:** product ID, flavor, serving size (S/M/L), quantity in stock, price, and container type (Cone/Cup).
+**Product fields:** product ID (`IC###`), flavor, serving size (S/M/L), quantity in stock, price, and container type (Cone/Cup).
 
-**Design decisions and ambiguities resolved**
+- **Cancel mechanism.** Every input method in `InputHelper` (except menu choices, where `[0]` already means log out) throws `OperationCancelledException` when the user types `C`. `User.showMenu()` catches it in **one** place and prints `Operation cancelled. Returning to <Role> Menu...`. Because products and orders are saved only after the last input, a cancelled operation never leaves partial data behind. The password prompt handles `C` itself and returns to the Main Menu.
+- **Shared menu loop.** `User.showMenu()` holds the loop, the `[0] Log out` handling and the cancel handling. Each role only defines `printMenu()` and `handleChoice()`, so none of this is duplicated.
+- **Stock policy: reserve on order.** Stock is subtracted when the Cashier places an order. Pending orders therefore can never over-order, and every order in the queue can always be processed. Processing just removes the order from the front of the queue. Cancelling an order returns its reserved stock. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
+- **Queue location.** The queue lives in `IceCreamMaker`, as the specification requires. The Cashier is given a reference to it and calls `placeOrder()`.
+- **Cancelling a specific order.** `cancelPendingOrder()` rotates the queue once. Each order is polled from the front and offered to the back, except the cancelled one, so the remaining orders keep their arrival order.
+- **Where each algorithm is used.** Each one has a real job:
+  - **Insertion Sort**: the *Sort products* option (by price, stable).
+  - **Quick Sort**: *View inventory* lists products by product ID.
+  - **Merge Sort**: *Binary Search* sorts a copy **by product ID** before searching, so it never runs on a list sorted by another key.
+  - **Linear Search**: search by flavor keyword.
+  - **Binary Search**: search by product ID.
+- **ArrayDeque as a stack.** While entering an order, the Cashier's items are pushed onto an `ArrayDeque`. Typing `U` pops the most recently added item (LIFO undo). This replaces the earlier "undo last removal" option, which is not part of the required Manager menu.
+- **HashMap** maps ID to product. It gives O(1) lookups for update, remove and orders, and it detects duplicate IDs. The **ArrayList** stores the product records.
+- **Order IDs** are readable and unique: `ORD-001`, `ORD-002`, and so on.
+- **Product `IceCream` was renamed to `Product`** to match the specification.
 
-- **Role selection has no password.** The specification asks for separate menus, not authentication, so a simple role menu is used.
-- **One `IceCream` class** stores the container type as a field instead of using `InCone`/`InCup` subclasses. The subclasses had no behaviour of their own, so the hierarchy added complexity without purpose.
-- **Product IDs** use the format `IC###` (for example `IC001`). The Manager enters the ID, and duplicates are rejected.
-- **Validation:** price must be greater than 0 (max 9999.99), and stock must be between 0 and 999. All menu and number inputs are re-asked until valid.
-- **Who creates orders:** the specification gives the order queue to the IceCreamMaker and limits the Cashier to view/search/sort. Orders are therefore added from the IceCreamMaker menu.
-- **Stock and orders:** stock is *reserved* (subtracted) when an order enters the queue, so two orders can never use the same stock. Processing removes the order from the front of the queue. Cancelling removes it and returns the stock.
-- **ArrayDeque as a stack:** the specification does not say where stack behaviour belongs. The simplest useful place is **undo last removal**. Each removed product is pushed onto an `ArrayDeque`, and undo pops the most recent one (LIFO).
-- **Sorting** always works on a copy, so the stored inventory order never changes. The user chooses both the key (ID, flavor, price, quantity) and the algorithm (Merge, Quick, Insertion), which makes every algorithm demonstrable.
-- **Binary Search** searches by product ID. It first sorts a copy of the list **by ID** with Merge Sort, so it never runs on a list sorted by a different key.
-- **HashMap** maps ID to product. It gives O(1) lookups for update, remove, stock adjustment, and orders, and it detects duplicate IDs.
-
-## 2. Project Structure
+## 3. Project Structure
 
 ```
 dsa-finals-group4/
 ├── README.md
 ├── src/
-│   ├── Main.java              entry point, role menu, sample products
-│   ├── IceCream.java          product model
-│   ├── Order.java             pending order model
-│   ├── Inventory.java         ArrayList + HashMap + ArrayDeque (undo stack)
-│   ├── SortAlgorithms.java    Merge Sort, Quick Sort, Insertion Sort
-│   ├── SearchAlgorithms.java  Linear Search, Binary Search
-│   ├── InputHelper.java       validated console input
-│   ├── User.java              shared view / search / sort for all roles
+│   ├── Main.java                         entry point, role selection, sample products
+│   ├── Authentication.java               password constants and login
+│   ├── OperationCancelledException.java  thrown when the user types C
+│   ├── InputHelper.java                  validated console input with C to cancel
+│   ├── Product.java                      product model (price range enforced)
+│   ├── Inventory.java                    ArrayList + HashMap, product rules
+│   ├── OrderItem.java                    one product line in an order
+│   ├── Order.java                        a customer order (one or more items)
+│   ├── SortAlgorithms.java               Insertion Sort, Merge Sort, Quick Sort
+│   ├── SearchAlgorithms.java             Linear Search, Binary Search
+│   ├── User.java                         shared menu loop, view / search / sort
 │   ├── Manager.java
-│   ├── Cashier.java
-│   └── IceCreamMaker.java     Queue of pending orders (FIFO)
+│   ├── Cashier.java                      order entry (ArrayDeque stack for undo)
+│   └── IceCreamMaker.java                Queue of pending orders (FIFO)
 └── test/
-    ├── AlgorithmTest.java     automated checks (plain Java, no JUnit)
-    ├── demo-input.txt         scripted session covering every feature
-    └── demo-output.txt        output produced by that session
+    ├── AlgorithmTest.java                automated checks (plain Java, no JUnit)
+    ├── demo-input.txt                    scripted session covering every feature
+    └── demo-output.txt                   output produced by that session
 ```
 
-## 3. Source Code
+## 4. Passwords (demonstration only)
 
-All source code is in `src/` (see the structure above). Comments explain each algorithm.
+| Role | Password |
+|---|---|
+| Manager | `ICManager123` |
+| Cashier | `ICCashier123` |
+| Ice Cream Maker | `ICMaker123` |
 
-## 4. Compile and Run (JDK 11 or newer)
+## 5. Compile and Run (JDK 11 or newer)
 
 From the project folder:
 
@@ -77,83 +99,131 @@ Replay the scripted demo session:
 java -cp out Main < test/demo-input.txt
 ```
 
-## 5. Testing and Sample Output
+## 6. Testing and Sample Output
 
-`AlgorithmTest` runs 41 checks, and all of them pass. They cover:
+`AlgorithmTest` runs 61 checks, and all of them pass. They cover:
+- Insertion, Merge and Quick Sort (by price and ID, stability, empty and single-item lists)
+- Linear and Binary Search (including unsorted input, missing IDs and empty lists)
+- The price limits: 30.00 and 120.00 accepted; 29.99, 120.01, 25, 130 and 150 rejected, both in the constructor and in update
+- The inventory rules
+- Order placement and stock reservation, including over-ordering across lines and orders
+- FIFO processing
+- Cancelling a specific order while the rest keep their order
+- The ArrayDeque undo stack
 
-- Merge Sort, Quick Sort, and Insertion Sort by ID, flavor, price, and quantity, all producing the expected order
-- All three sorts on empty and single-item lists
-- Linear Search: partial match, case-insensitive match, no match, and an empty list
-- Binary Search: finds every ID in an *unsorted* inventory, returns null for a missing ID or an empty list, and does not reorder the inventory
-- Inventory: add, duplicate-ID rejection, HashMap lookup, stock limits (no negatives, max 999), and removing a missing ID
-- ArrayDeque undo stack: LIFO order, empty stack, and refusal when the ID was reused
-- Queue: FIFO order, and polling an empty queue
+`test/demo-input.txt` drives every menu of every role. `test/demo-output.txt` is the real output. Excerpts:
 
-`test/demo-input.txt` drives every menu. `test/demo-output.txt` holds the actual output of that session. Some excerpts:
-
-Search with Binary Search (ID) and Linear Search (flavor):
+**Authentication**
 ```
-Enter product ID: IC999 -> No product found with ID IC999.
-Enter flavor keyword: co -> 2 match(es) found:
-IC003  | Chocolate          | M    | Cup  |    40 | P   65.00
-IC004  | Cookies and Cream  | L    | Cup  |    30 | P   90.00
-```
-
-Sort by price with Quick Sort:
-```
-IC001  | Vanilla            | S    | Cone |    50 | P   45.00
-IC002  | Mango              | M    | Cone |    25 | P   60.00
-IC003  | Chocolate          | M    | Cup  |    40 | P   65.00
-IC006  | Ube                | L    | Cone |    20 | P   80.00
-IC005  | Strawberry         | L    | Cup  |    25 | P   85.00
-IC004  | Cookies and Cream  | L    | Cup  |    30 | P   90.00
+Enter Manager password (or C to cancel): wrongpass
+Incorrect password for Manager. Please try again.
+Enter Manager password (or C to cancel): ********
+Access granted. Welcome, Manager!
+...
+Enter Cashier password (or C to cancel): C
+Login cancelled. Returning to Main Menu...
 ```
 
-FIFO order queue (orders 1, 2, 3 added; order 2 cancelled):
+**Price validation**
 ```
-Order # to cancel: 2 -> 3 returned to stock of IC005. Canceled: Order #2
-Next order: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
-Process this order? (Y/N): N -> Order left in the queue.
-Process this order? (Y/N): Y -> Processed: Order #1 | IC001 Vanilla (S, Cone) x5 | Total: P225.00
-Processed: Order #3 | IC002 Mango (M, Cone) x2 | Total: P120.00
+Price (P30.00-P120.00): P25
+Invalid price. Price must be from P30.00 to P120.00.
+Price (P30.00-P120.00): P130
+Invalid price. Price must be from P30.00 to P120.00.
+Price (P30.00-P120.00): P30
+Container type (cone/cup): cone
+Product IC006 added successfully.
+```
+
+**Input cancellation**
+```
+--- Add Product (enter C at any prompt to cancel) ---
+Enter product ID, e.g. IC006 (or C to cancel): IC008
+Flavor: Pistachio
+Serving size (S/M/L): C
+Operation cancelled. Returning to Manager Menu...
+```
+
+**Sorting (no algorithm menu)**
+```
+Sorting complete: products sorted by price (lowest to highest) using Insertion Sort.
+IC001  | Vanilla            | S    | Cone |    50 | P  45.00
+IC002  | Mango              | M    | Cone |    25 | P  60.00
+IC003  | Chocolate          | M    | Cup  |    40 | P  65.00
+IC005  | Strawberry         | L    | Cup  |    15 | P  85.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 | P  90.00
+```
+
+**Order creation (Cashier)**
+```
+Product ID (or D / U / C): IC001
+Quantity (1-50, or C to cancel): 2
+Added: 2x IC001 Vanilla (S, Cone) = P90.00 | Items in order: 1
+Product ID (or D / U / C): IC003
+Quantity (1-40, or C to cancel): 1
+Product ID (or D / U / C): U
+Removed from order: 1x IC003 Chocolate (M, Cup) = P65.00
+Product ID (or D / U / C): IC002
+Quantity (1-25, or C to cancel): 3
+Product ID (or D / U / C): D
+Order added to the queue: ORD-001 | Total: P270.00
+    - 2x IC001 Vanilla (S, Cone) = P90.00
+    - 3x IC002 Mango (M, Cone) = P180.00
+```
+
+**Order cancellation and FIFO processing (Ice Cream Maker)**
+```
+Enter order ID to cancel, e.g. ORD-001 (or C to cancel): ORD-002
+Order ORD-002 cancelled. Reserved stock was returned to the inventory.
+
+Next order: ORD-001 | Total: P270.00
+Process this order? (Y/N, or C to cancel): Y
+Order ORD-001 processed successfully.
+Next order: ORD-003 | Total: P180.00
+Process this order? (Y/N, or C to cancel): Y
+Order ORD-003 processed successfully.
 No pending orders to process.
 ```
 
-Input validation (the user is asked again and the program never crashes):
-```
-Flavor: Ube 1        -> Flavor must contain only letters and spaces (max 18 characters).
-Serving size: X      -> Serving size must be S, M or L.
-Quantity: -5         -> Please enter a whole number from 0 to 999.
-Price: -10 / abc     -> Price must be a number greater than 0 and at most 9999.99.
-Container: bowl      -> Container type must be cone or cup.
-Product ID: IC003    -> A product with ID IC003 already exists. Product not added.
-```
+**Stock consistency.** The final inventory in the demo shows:
+- Vanilla 50 → 48 and Mango 25 → 22 (ORD-001)
+- Cookies and Cream 30 → 28 (ORD-003)
+- Strawberry 15 → 0 → 15 (ORD-002 reserved, then cancelled)
+- Ube unchanged at 20 (that order was cancelled before it was placed)
 
-## 6. Requirements Compliance Checklist
+## 7. Requirements Checklist
 
 | Requirement | Implemented in | Done |
 |---|---|---|
-| Product has ID, flavor, serving size, quantity, price, container | `IceCream` | ✅ |
-| Add product (no duplicate IDs, no negative price or stock) | `Manager.addProduct`, `Inventory.addProduct`, `InputHelper` | ✅ |
-| Remove product (checks it exists, asks for confirmation) | `Manager.removeProduct`, `Inventory.removeProduct` | ✅ |
-| Update product details (checks it exists) | `Manager.updateProduct` | ✅ |
-| Display inventory | `User.viewInventory`, `Inventory.displayProducts` | ✅ |
-| Search by product ID | `SearchAlgorithms.binarySearchById` via `User.searchProducts` | ✅ |
-| Sort products | `User.sortProducts`, `SortAlgorithms` | ✅ |
-| Adjust inventory quantities | `Manager.adjustStock`, `Inventory.adjustStock`; order reserve and return in `IceCreamMaker` | ✅ |
-| Input validation and graceful errors | `InputHelper` (re-asks, handles end of input); missing ID and empty checks in each role | ✅ |
-| Manager / Cashier / IceCreamMaker menus with correct permissions | `Manager.showMenu`, `Cashier.showMenu`, `IceCreamMaker.showMenu` | ✅ |
-| Order queue in IceCreamMaker, FIFO processing | `IceCreamMaker.pendingOrders` (`Queue`), `processNextOrder` (`poll`) | ✅ |
-| Order removed only when processed or cancelled | `processNextOrder`, `cancelOrder` | ✅ |
-| Empty queue handled | `processNextOrder`, `viewPendingOrders`, `cancelOrder` | ✅ |
-| `ArrayList` for products | `Inventory.products` | ✅ |
-| `HashMap` for lookup | `Inventory.productMap` | ✅ |
-| `Queue` for pending orders | `IceCreamMaker.pendingOrders` | ✅ |
-| `ArrayDeque` as a stack | `Inventory.removedProducts` (undo last removal) | ✅ |
-| Merge Sort | `SortAlgorithms.mergeSort` (also used before Binary Search) | ✅ |
-| Quick Sort | `SortAlgorithms.quickSort` | ✅ |
-| Insertion Sort | `SortAlgorithms.insertionSort` | ✅ |
+| Product with ID, flavor, serving size, quantity, price, container | `Product` | ✅ |
+| Add product (unique ID, valid price and stock) | `Manager.addProduct`, `Inventory.addProduct` | ✅ |
+| Update product details (checks the product exists) | `Manager.updateProduct`, `Inventory.updatePrice` / `updateQuantity` | ✅ |
+| Remove product (checks it exists, confirmation, blocked while in a pending order) | `Manager.removeProduct`, `Inventory.removeProduct` | ✅ |
+| Display inventory | `User.viewInventory` | ✅ |
+| Search by ID / flavor | `User.searchProducts`, `SearchAlgorithms` | ✅ |
+| Adjust inventory quantities | `Inventory.updateQuantity`, `Inventory.adjustStock` (reserve / return) | ✅ |
+| Password per role, retry, cancel, passwords never printed, constants in one class | `Authentication` | ✅ |
+| Price 30.00–120.00 on add and update, enforced in logic | `Product.isValidPrice` / `setPrice`, `Inventory`, `InputHelper.readPrice` | ✅ |
+| Sort products runs Insertion Sort with no algorithm menu, for all roles | `User.sortProducts` | ✅ |
+| Manager menu (exact layout, `[0]` = Log out) | `Manager.printMenu` | ✅ |
+| Cashier menu (exact layout) | `Cashier.printMenu` | ✅ |
+| Ice Cream Maker menu (exact layout, 4 = view, 5 = cancel, 6 = process) | `IceCreamMaker.printMenu` | ✅ |
+| Cashier creates validated orders with multiple items and unique IDs | `Cashier.addNewOrder`, `IceCreamMaker.placeOrder` | ✅ |
+| No over-ordering across pending orders | Stock reserved in `placeOrder`; the cart checks quantity already in the order | ✅ |
+| Cashier and Ice Cream Maker can view pending orders | `IceCreamMaker.displayPendingOrders` | ✅ |
+| FIFO processing; order removed only once processed | `IceCreamMaker.processNextOrderFromMenu` (`peek`, confirm, `poll`) | ✅ |
+| Empty queue handled | process, cancel and view options | ✅ |
+| Cancel a specific order, keep FIFO order, return reserved stock | `IceCreamMaker.cancelPendingOrder` | ✅ |
+| `C` cancels any multi-step input without saving partial data | `InputHelper`, `OperationCancelledException`, `User.showMenu` | ✅ |
+| Invalid menu choices handled | `InputHelper.readMenuChoice` | ✅ |
+| `ArrayList` | `Inventory.products` | ✅ |
+| `HashMap` | `Inventory.productMap` | ✅ |
+| `Queue` (in IceCreamMaker) | `IceCreamMaker.pendingOrders` | ✅ |
+| `ArrayDeque` as a stack | `Cashier.addNewOrder` cart (`push` / `pop` for undo) | ✅ |
+| Insertion Sort | `SortAlgorithms.insertionSort`, used by Sort products | ✅ |
+| Quick Sort | `SortAlgorithms.quickSort`, used by View inventory | ✅ |
+| Merge Sort | `SortAlgorithms.mergeSort`, used before Binary Search | ✅ |
 | Linear Search | `SearchAlgorithms.linearSearchByFlavor` | ✅ |
-| Binary Search on a list sorted by the same key | `SearchAlgorithms.binarySearchById` (sorts by ID first) | ✅ |
+| Binary Search on a list sorted by the same key | `SearchAlgorithms.binarySearchById` | ✅ |
 | No built-in sort or search replacing the required algorithms | Only hand-written algorithms are used | ✅ |
 | Standard Java, console only, no external libraries | All files | ✅ |

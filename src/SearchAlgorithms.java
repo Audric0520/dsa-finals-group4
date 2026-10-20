@@ -9,10 +9,10 @@ public class SearchAlgorithms {
      * Linear Search: checks every product one by one and returns all products
      * whose flavor contains the keyword (case-insensitive). O(n).
      */
-    public static ArrayList<IceCream> linearSearchByFlavor(ArrayList<IceCream> list, String keyword) {
-        ArrayList<IceCream> matches = new ArrayList<>();
+    public static ArrayList<Product> linearSearchByFlavor(ArrayList<Product> list, String keyword) {
+        ArrayList<Product> matches = new ArrayList<>();
         String lowerKeyword = keyword.toLowerCase();
-        for (IceCream product : list) {
+        for (Product product : list) {
             if (product.getFlavor().toLowerCase().contains(lowerKeyword)) {
                 matches.add(product);
             }
@@ -26,8 +26,8 @@ public class SearchAlgorithms {
      * first sorts a copy of the list by ID (using Merge Sort) before searching.
      * Returns null if the ID is not found.
      */
-    public static IceCream binarySearchById(ArrayList<IceCream> list, String productId) {
-        ArrayList<IceCream> sorted = new ArrayList<>(list);
+    public static Product binarySearchById(ArrayList<Product> list, String productId) {
+        ArrayList<Product> sorted = new ArrayList<>(list);
         SortAlgorithms.mergeSort(sorted, SortAlgorithms.BY_ID);
 
         int low = 0;
