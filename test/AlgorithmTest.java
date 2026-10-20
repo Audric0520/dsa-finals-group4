@@ -94,6 +94,17 @@ public class AlgorithmTest {
     private static void testSorting() {
         checkAllSorts("price", SortAlgorithms.BY_PRICE, "IC001 IC002 IC003 IC005 IC004");
         checkAllSorts("ID", SortAlgorithms.BY_ID, "IC001 IC002 IC003 IC004 IC005");
+        checkAllSorts("quantity", SortAlgorithms.BY_QUANTITY, "IC005 IC002 IC004 IC003 IC001");
+
+        // The Sort products menu options: Insertion Sort by quantity or price, ascending or descending
+        ArrayList<Product> quantityDesc = sampleProducts();
+        SortAlgorithms.insertionSort(quantityDesc, SortAlgorithms.BY_QUANTITY.reversed());
+        check("Insertion Sort by quantity, descending -> " + ids(quantityDesc),
+                ids(quantityDesc).equals("IC001 IC003 IC004 IC002 IC005"));
+        ArrayList<Product> priceDesc = sampleProducts();
+        SortAlgorithms.insertionSort(priceDesc, SortAlgorithms.BY_PRICE.reversed());
+        check("Insertion Sort by price, descending -> " + ids(priceDesc),
+                ids(priceDesc).equals("IC004 IC005 IC003 IC002 IC001"));
 
         ArrayList<Product> ties = new ArrayList<>();
         ties.add(new Product("IC009", "Ube", 'S', 1, 50.00, "Cone"));
@@ -180,6 +191,18 @@ public class AlgorithmTest {
         check("Duplicate ID is rejected", !inventory.addProduct(new Product("IC001", "Other", 'M', 5, 50.0, "Cup")));
         check("Negative stock product is rejected",
                 !inventory.addProduct(new Product("IC002", "Mango", 'M', -1, 50.0, "Cup")));
+        check("New product with quantity 0 is rejected (minimum is 1)",
+                !inventory.addProduct(new Product("IC002", "Mango", 'M', 0, 50.0, "Cup")));
+        check("New product with quantity 101 is rejected (maximum is 100)",
+                !inventory.addProduct(new Product("IC002", "Mango", 'M', 101, 50.0, "Cup")));
+        check("New product with quantity 1 is accepted",
+                inventory.addProduct(new Product("IC002", "Mango", 'M', 1, 50.0, "Cup")));
+        check("New product with quantity 100 is accepted",
+                inventory.addProduct(new Product("IC003", "Ube", 'L', 100, 50.0, "Cone")));
+        check("updateQuantity allows 0 (sold out) for an existing product", inventory.updateQuantity("IC002", 0));
+        check("updateQuantity rejects 101", !inventory.updateQuantity("IC002", 101));
+        inventory.removeProduct("IC002");
+        inventory.removeProduct("IC003");
         check("HashMap lookup finds product", inventory.findById("IC001").getFlavor().equals("Vanilla"));
         check("Lookup of missing ID returns null", inventory.findById("IC404") == null);
         check("updateQuantity sets stock", inventory.updateQuantity("IC001", 15)
