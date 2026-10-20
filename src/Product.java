@@ -1,7 +1,10 @@
 /**
  * One ice cream product in the inventory.
  */
-public class IceCream {
+public class Product {
+    public static final double MIN_PRICE = 30.00;
+    public static final double MAX_PRICE = 120.00;
+
     private final String productId;
     private String flavor;
     private char servingSize;     // S, M or L
@@ -9,14 +12,18 @@ public class IceCream {
     private double price;
     private String containerType; // "Cone" or "Cup"
 
-    public IceCream(String productId, String flavor, char servingSize, int quantity, double price,
+    public Product(String productId, String flavor, char servingSize, int quantity, double price,
             String containerType) {
         this.productId = productId;
         this.flavor = flavor;
         this.servingSize = servingSize;
         this.quantity = quantity;
-        this.price = price;
         this.containerType = containerType;
+        setPrice(price);
+    }
+
+    public static boolean isValidPrice(double price) {
+        return price >= MIN_PRICE && price <= MAX_PRICE;
     }
 
     public String getProductId() {
@@ -51,7 +58,11 @@ public class IceCream {
         return price;
     }
 
+    /** Last line of defence: an invalid price can never be stored, even if a menu forgets to check. */
     public void setPrice(double price) {
+        if (!isValidPrice(price)) {
+            throw new IllegalArgumentException("Price must be from " + MIN_PRICE + " to " + MAX_PRICE + ".");
+        }
         this.price = price;
     }
 
@@ -65,7 +76,7 @@ public class IceCream {
 
     @Override
     public String toString() {
-        return String.format("%-6s | %-18s | %-4c | %-4s | %5d | P%8.2f",
+        return String.format("%-6s | %-18s | %-4c | %-4s | %5d | P%7.2f",
                 productId, flavor, servingSize, containerType, quantity, price);
     }
 }

@@ -1,37 +1,48 @@
+import java.util.ArrayList;
+
 /**
- * A pending customer order: which product and how many.
+ * A customer order waiting in the queue. It can contain one or more products.
  */
 public class Order {
-    private final int orderNumber;
-    private final IceCream product;
-    private final int quantity;
+    private final String orderId; // e.g. ORD-001
+    private final ArrayList<OrderItem> items;
 
-    public Order(int orderNumber, IceCream product, int quantity) {
-        this.orderNumber = orderNumber;
-        this.product = product;
-        this.quantity = quantity;
+    public Order(String orderId, ArrayList<OrderItem> items) {
+        this.orderId = orderId;
+        this.items = new ArrayList<>(items);
     }
 
-    public int getOrderNumber() {
-        return orderNumber;
+    public String getOrderId() {
+        return orderId;
     }
 
-    public IceCream getProduct() {
-        return product;
-    }
-
-    public int getQuantity() {
-        return quantity;
+    public ArrayList<OrderItem> getItems() {
+        return new ArrayList<>(items);
     }
 
     public double getTotal() {
-        return product.getPrice() * quantity;
+        double total = 0;
+        for (OrderItem item : items) {
+            total += item.getSubtotal();
+        }
+        return total;
+    }
+
+    public boolean containsProduct(String productId) {
+        for (OrderItem item : items) {
+            if (item.getProduct().getProductId().equals(productId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public String toString() {
-        return String.format("Order #%d | %s %s (%c, %s) x%d | Total: P%.2f",
-                orderNumber, product.getProductId(), product.getFlavor(), product.getServingSize(),
-                product.getContainerType(), quantity, getTotal());
+        StringBuilder text = new StringBuilder(orderId + " | Total: P" + String.format("%.2f", getTotal()));
+        for (OrderItem item : items) {
+            text.append(System.lineSeparator()).append("    - ").append(item);
+        }
+        return text.toString();
     }
 }
