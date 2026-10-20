@@ -8,7 +8,7 @@ import java.util.Queue;
  *
  * Stock policy: stock is reserved (subtracted) when the Cashier places an order, so
  * pending orders can never ask for more than what is in stock. Processing an order
- * just completes it. Cancelling an order gives its reserved stock back.
+ * just completes it.
  */
 public class IceCreamMaker extends User {
     private final Queue<Order> pendingOrders = new LinkedList<>();
@@ -30,14 +30,13 @@ public class IceCreamMaker extends User {
         System.out.println("[2] Search products");
         System.out.println("[3] Sort products");
         System.out.println("[4] View pending orders");
-        System.out.println("[5] Cancel an order");
-        System.out.println("[6] Process next order");
+        System.out.println("[5] Process next order");
         System.out.println("[0] Log out");
     }
 
     @Override
     protected int getLastOption() {
-        return 6;
+        return 5;
     }
 
     @Override
@@ -56,9 +55,6 @@ public class IceCreamMaker extends User {
                 displayPendingOrders();
                 break;
             case 5:
-                cancelOrderFromMenu();
-                break;
-            case 6:
                 processNextOrderFromMenu();
                 break;
             default:
@@ -110,31 +106,6 @@ public class IceCreamMaker extends User {
         return pendingOrders.poll();
     }
 
-    /**
-     * Removes only the order with the given ID and gives its reserved stock back.
-     * The queue is rotated once: every order is taken from the front and put back at the
-     * end, except the one being cancelled, so the remaining orders keep their FIFO order.
-     * Returns the cancelled order, or null if no pending order has that ID.
-     */
-    public Order cancelPendingOrder(String orderId) {
-        Order cancelled = null;
-        int size = pendingOrders.size();
-        for (int i = 0; i < size; i++) {
-            Order order = pendingOrders.poll();
-            if (cancelled == null && order.getOrderId().equals(orderId)) {
-                cancelled = order;
-            } else {
-                pendingOrders.offer(order);
-            }
-        }
-        if (cancelled != null) {
-            for (OrderItem item : cancelled.getItems()) {
-                inventory.adjustStock(item.getProduct().getProductId(), item.getQuantity());
-            }
-        }
-        return cancelled;
-    }
-
     /** Used by the Manager: a product that is part of a pending order cannot be removed. */
     public boolean hasPendingOrderFor(String productId) {
         for (Order order : pendingOrders) {
@@ -178,21 +149,5 @@ public class IceCreamMaker extends User {
         completeNextOrder();
         System.out.println("Order " + next.getOrderId() + " processed successfully.");
         System.out.println("Orders still waiting: " + pendingOrders.size());
-    }
-
-    private void cancelOrderFromMenu() {
-        if (pendingOrders.isEmpty()) {
-            System.out.println("No pending orders to cancel.");
-            return;
-        }
-        displayPendingOrders();
-        String orderId = InputHelper.readText("Enter order ID to cancel, e.g. ORD-001 (or C to cancel): ")
-                .toUpperCase();
-        Order cancelled = cancelPendingOrder(orderId);
-        if (cancelled == null) {
-            System.out.println("No pending order with ID " + orderId + ". Nothing was cancelled.");
-        } else {
-            System.out.println("Order " + orderId + " cancelled. Reserved stock was returned to the inventory.");
-        }
     }
 }
