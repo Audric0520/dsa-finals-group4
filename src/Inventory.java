@@ -66,7 +66,7 @@ public class Inventory {
 
     /**
      * Adds (positive change) or subtracts (negative change) stock. Used to reserve stock
-     * for an order and to give it back when the order is cancelled.
+     * for a new order.
      * Fails if the product does not exist or the stock would go below 0.
      */
     public boolean adjustStock(String productId, int change) {

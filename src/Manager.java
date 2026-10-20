@@ -139,7 +139,7 @@ public class Manager extends User {
         }
         if (iceCreamMaker.hasPendingOrderFor(product.getProductId())) {
             System.out.println("Cannot remove " + product.getProductId()
-                    + ": it is part of a pending order. Process or cancel that order first.");
+                    + ": it is part of a pending order. Process that order first.");
             return;
         }
         System.out.println("Product: " + product);

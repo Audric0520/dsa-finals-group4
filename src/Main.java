@@ -17,20 +17,20 @@ public class Main {
             System.out.println("\n========================================");
             System.out.println("    SC ICE CREAM MANAGEMENT SYSTEM");
             System.out.println("========================================");
-            System.out.println("[1] Manager");
-            System.out.println("[2] Cashier");
-            System.out.println("[3] Ice Cream Maker");
+            System.out.println("[1] Cashier");
+            System.out.println("[2] Ice Cream Maker");
+            System.out.println("[3] Manager");
             System.out.println("[0] Exit");
             int choice = InputHelper.readMenuChoice(3);
 
             if (choice == 0) {
                 break;
-            } else if (choice == 1 && Authentication.login(Authentication.MANAGER)) {
-                manager.showMenu();
-            } else if (choice == 2 && Authentication.login(Authentication.CASHIER)) {
+            } else if (choice == 1 && Authentication.login(Authentication.CASHIER)) {
                 cashier.showMenu();
-            } else if (choice == 3 && Authentication.login(Authentication.ICE_CREAM_MAKER)) {
+            } else if (choice == 2 && Authentication.login(Authentication.ICE_CREAM_MAKER)) {
                 iceCreamMaker.showMenu();
+            } else if (choice == 3 && Authentication.login(Authentication.MANAGER)) {
+                manager.showMenu();
             }
         }
         System.out.println("Thank you for using the SC Ice Cream Management System. Goodbye!");
