@@ -382,7 +382,7 @@ Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How ma
 How many Strawberry (IC005)? Enter 1-15 (or C to cancel the order): Added to order: 15x IC005 Strawberry (L, Cup) = P1275.00
 Items in this order: 1
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Strawberry (IC005) has no more stock available.
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Strawberry (IC005) has no more stock available (in stock: 15, in pending orders: 0, already in this order: 15).
 
 Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Order added to the queue: ORD-002 | Total: P1275.00
     - 15x IC005 Strawberry (L, Cup) = P1275.00
@@ -459,11 +459,11 @@ Choice:
 ------------------------------------------------------------
 ID     | Flavor             | Size | Type | Stock |    Price
 ------------------------------------------------------------
-IC001  | Vanilla            | S    | Cone |    48 |   P45.00
-IC002  | Mango              | M    | Cone |    22 |   P60.00
+IC001  | Vanilla            | S    | Cone |    50 |   P45.00
+IC002  | Mango              | M    | Cone |    25 |   P60.00
 IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
-IC004  | Cookies and Cream  | L    | Cup  |    28 |   P90.00
-IC005  | Strawberry         | L    | Cup  |     0 |   P85.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
+IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
 IC006  | Ube                | L    | Cone |    20 |   P99.50
 ------------------------------------------------------------
 
@@ -541,11 +541,11 @@ Sorting complete: products sorted by price (highest to lowest) using Insertion S
 ID     | Flavor             | Size | Type | Stock |    Price
 ------------------------------------------------------------
 IC006  | Ube                | L    | Cone |    20 |   P99.50
-IC004  | Cookies and Cream  | L    | Cup  |    28 |   P90.00
-IC005  | Strawberry         | L    | Cup  |     0 |   P85.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
+IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
 IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
-IC002  | Mango              | M    | Cone |    22 |   P60.00
-IC001  | Vanilla            | S    | Cone |    48 |   P45.00
+IC002  | Mango              | M    | Cone |    25 |   P60.00
+IC001  | Vanilla            | S    | Cone |    50 |   P45.00
 ------------------------------------------------------------
 
 ========== ICE CREAM MAKER MENU ==========
@@ -589,7 +589,9 @@ Choice:
 Next order: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
-Process this order? (Y/N, or C to cancel): Order ORD-001 processed successfully.
+Process this order? (Y/N, or C to cancel): Order ORD-001 processed successfully. Inventory updated:
+    - IC001 Vanilla: -2, stock now 48
+    - IC002 Mango: -3, stock now 22
 Orders still waiting: 2
 
 ========== ICE CREAM MAKER MENU ==========
@@ -614,7 +616,8 @@ Process this order? (Y/N, or C to cancel): Operation cancelled. Returning to Ice
 Choice: 
 Next order: ORD-002 | Total: P1275.00
     - 15x IC005 Strawberry (L, Cup) = P1275.00
-Process this order? (Y/N, or C to cancel): Order ORD-002 processed successfully.
+Process this order? (Y/N, or C to cancel): Order ORD-002 processed successfully. Inventory updated:
+    - IC005 Strawberry: -15, stock now 0
 Orders still waiting: 1
 
 ========== ICE CREAM MAKER MENU ==========
@@ -627,7 +630,8 @@ Orders still waiting: 1
 Choice: 
 Next order: ORD-003 | Total: P180.00
     - 2x IC004 Cookies and Cream (L, Cup) = P180.00
-Process this order? (Y/N, or C to cancel): Order ORD-003 processed successfully.
+Process this order? (Y/N, or C to cancel): Order ORD-003 processed successfully. Inventory updated:
+    - IC004 Cookies and Cream: -2, stock now 28
 Orders still waiting: 0
 
 ========== ICE CREAM MAKER MENU ==========

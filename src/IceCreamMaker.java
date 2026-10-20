@@ -6,9 +6,11 @@ import java.util.Queue;
  * IceCreamMaker: views, searches and sorts the inventory, and owns the queue of
  * pending orders. Orders are processed FIFO (first in, first out).
  *
- * Stock policy: stock is reserved (subtracted) when the Cashier places an order, so
- * pending orders can never ask for more than what is in stock. Processing an order
- * just completes it.
+ * Stock policy: the inventory is only updated when an order is processed.
+ * Placing an order does not change the stock, but it is only accepted if the stock
+ * left after all earlier pending orders is enough, so the queue never promises more
+ * than what is in stock. Stock is checked again just before processing, in case the
+ * Manager changed it in the meantime.
  */
 public class IceCreamMaker extends User {
     private final Queue<Order> pendingOrders = new LinkedList<>();
@@ -65,44 +67,77 @@ public class IceCreamMaker extends User {
     // ===================== Queue operations (also used by the Cashier) =====================
 
     /**
-     * Reserves stock for every item and adds a new order to the back of the queue.
-     * Returns the new order, or null (and changes nothing) if the items are empty or
-     * there is not enough stock for all of them.
+     * Adds a new order to the back of the queue. The inventory is NOT changed here.
+     * Returns the new order, or null (and adds nothing) if the items are empty or the
+     * stock not already promised to pending orders is not enough.
      */
     public Order placeOrder(ArrayList<OrderItem> items) {
-        if (items.isEmpty() || !hasEnoughStock(items)) {
+        if (items.isEmpty()) {
             return null;
         }
         for (OrderItem item : items) {
-            inventory.adjustStock(item.getProduct().getProductId(), -item.getQuantity());
+            Product product = item.getProduct();
+            if (item.getQuantity() <= 0 || inventory.findById(product.getProductId()) != product
+                    || totalQuantity(items, product) > getAvailableQuantity(product)) {
+                return null;
+            }
         }
         Order order = new Order(String.format("ORD-%03d", nextOrderNumber++), items);
         pendingOrders.offer(order);
         return order;
     }
 
-    // Checks the total asked for each product (the same product may appear in several items).
-    private boolean hasEnoughStock(ArrayList<OrderItem> items) {
+    /** Total quantity of one product across a list of items (a product may appear more than once). */
+    private static int totalQuantity(ArrayList<OrderItem> items, Product product) {
+        int total = 0;
+        for (OrderItem item : items) {
+            if (item.getProduct() == product) {
+                total += item.getQuantity();
+            }
+        }
+        return total;
+    }
+
+    /** Quantity of a product that is already promised to orders waiting in the queue. */
+    public int getPendingQuantity(Product product) {
+        int total = 0;
+        for (Order order : pendingOrders) {
+            total += totalQuantity(order.getItems(), product);
+        }
+        return total;
+    }
+
+    /** Stock that new orders can still use: current stock minus what pending orders need. */
+    public int getAvailableQuantity(Product product) {
+        return product.getQuantity() - getPendingQuantity(product);
+    }
+
+    /** True if every product in the order is still in the inventory with enough stock. */
+    public boolean hasStockToProcess(Order order) {
+        ArrayList<OrderItem> items = order.getItems();
         for (OrderItem item : items) {
             Product product = item.getProduct();
-            if (item.getQuantity() <= 0 || inventory.findById(product.getProductId()) != product) {
-                return false;
-            }
-            int totalWanted = 0;
-            for (OrderItem other : items) {
-                if (other.getProduct() == product) {
-                    totalWanted += other.getQuantity();
-                }
-            }
-            if (totalWanted > product.getQuantity()) {
+            if (inventory.findById(product.getProductId()) != product
+                    || totalQuantity(items, product) > product.getQuantity()) {
                 return false;
             }
         }
         return true;
     }
 
-    /** Removes and returns the oldest order (FIFO), or null if the queue is empty. */
+    /**
+     * Processes the oldest order (FIFO): subtracts its quantities from the inventory and
+     * removes it from the queue. Returns null and changes nothing if the queue is empty
+     * or there is not enough stock, so the order is never lost.
+     */
     public Order completeNextOrder() {
+        Order order = pendingOrders.peek();
+        if (order == null || !hasStockToProcess(order)) {
+            return null;
+        }
+        for (OrderItem item : order.getItems()) {
+            inventory.adjustStock(item.getProduct().getProductId(), -item.getQuantity());
+        }
         return pendingOrders.poll();
     }
 
@@ -142,12 +177,22 @@ public class IceCreamMaker extends User {
             return;
         }
         System.out.println("\nNext order: " + next);
+        if (!hasStockToProcess(next)) {
+            System.out.println("Cannot process " + next.getOrderId() + ": not enough stock for this order.");
+            System.out.println("The order stays at the front of the queue. Ask the Manager to restock first.");
+            return;
+        }
         if (!InputHelper.readYesNo("Process this order? (Y/N, or C to cancel): ")) {
             System.out.println("Order " + next.getOrderId() + " was left in the queue.");
             return;
         }
         completeNextOrder();
-        System.out.println("Order " + next.getOrderId() + " processed successfully.");
+        System.out.println("Order " + next.getOrderId() + " processed successfully. Inventory updated:");
+        for (OrderItem item : next.getItems()) {
+            Product product = item.getProduct();
+            System.out.println("    - " + product.getProductId() + " " + product.getFlavor() + ": -"
+                    + item.getQuantity() + ", stock now " + product.getQuantity());
+        }
         System.out.println("Orders still waiting: " + pendingOrders.size());
     }
 }

@@ -19,6 +19,7 @@ public class AlgorithmTest {
         testInventory();
         testOrderQueue();
         testPendingOrderList();
+        testProcessingRechecksStock();
         testStack();
 
         System.out.println("\n" + passed + " passed, " + failed + " failed.");
@@ -236,17 +237,40 @@ public class AlgorithmTest {
         check("Order IDs are unique and readable", first.getOrderId().equals("ORD-001")
                 && second.getOrderId().equals("ORD-002") && third.getOrderId().equals("ORD-003"));
         check("Multi-item order total = 2x65 + 1x60", second.getTotal() == 190.0);
-        check("Stock is reserved when orders are placed", inventory.findById("IC001").getQuantity() == 45
-                && inventory.findById("IC003").getQuantity() == 38 && inventory.findById("IC005").getQuantity() == 0);
-        check("No more stock can be ordered after it is all reserved",
+        check("Placing orders does NOT change the inventory", inventory.findById("IC001").getQuantity() == 50
+                && inventory.findById("IC003").getQuantity() == 40 && inventory.findById("IC005").getQuantity() == 15);
+        check("Available stock subtracts pending orders (IC005: 15 - 15 = 0)",
+                maker.getAvailableQuantity(inventory.findById("IC005")) == 0
+                        && maker.getPendingQuantity(inventory.findById("IC005")) == 15);
+        check("No new order can use stock already promised to pending orders",
                 maker.placeOrder(items(inventory, "IC005", 1)) == null);
         check("Product in a pending order is detected", maker.hasPendingOrderFor("IC002"));
 
         check("FIFO: first processed is ORD-001", maker.completeNextOrder() == first);
+        check("Processing ORD-001 subtracts its stock (IC001: 50 -> 45)",
+                inventory.findById("IC001").getQuantity() == 45);
         check("FIFO: second processed is ORD-002", maker.completeNextOrder() == second);
+        check("Processing a multi-item order subtracts every item (IC003 38, IC002 24)",
+                inventory.findById("IC003").getQuantity() == 38 && inventory.findById("IC002").getQuantity() == 24);
         check("FIFO: third processed is ORD-003", maker.completeNextOrder() == third);
+        check("IC005 stock is 0 after its order is processed", inventory.findById("IC005").getQuantity() == 0);
         check("Queue is empty after processing all", maker.getPendingOrders().isEmpty());
-        check("Processing does not change reserved stock", inventory.findById("IC001").getQuantity() == 45);
+    }
+
+    private static void testProcessingRechecksStock() {
+        Inventory inventory = sampleInventory();
+        IceCreamMaker maker = new IceCreamMaker(inventory);
+        Order order = maker.placeOrder(items(inventory, "IC002", 10));
+        inventory.updateQuantity("IC002", 4); // the Manager lowers the stock after the order was placed
+
+        check("Order cannot be processed when stock dropped below what it needs", !maker.hasStockToProcess(order));
+        check("completeNextOrder returns null and keeps the order in the queue",
+                maker.completeNextOrder() == null && maker.getPendingOrders().size() == 1);
+        check("Stock is unchanged after the failed attempt", inventory.findById("IC002").getQuantity() == 4);
+
+        inventory.updateQuantity("IC002", 30); // the Manager restocks
+        check("After restocking the order is processed", maker.completeNextOrder() == order
+                && inventory.findById("IC002").getQuantity() == 20);
     }
 
     private static void testPendingOrderList() {
