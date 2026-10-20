@@ -33,7 +33,10 @@ It is written in plain Java with no external libraries.
 
 - **Cancel mechanism.** Every input method in `InputHelper` (except menu choices, where `[0]` already means log out) throws `OperationCancelledException` when the user types `C`. `User.showMenu()` catches it in **one** place and prints `Operation cancelled. Returning to <Role> Menu...`. Because products and orders are saved only after the last input, a cancelled operation never leaves partial data behind. The password prompt handles `C` itself and returns to the Main Menu.
 - **Shared menu loop.** `User.showMenu()` holds the loop, the `[0] Log out` handling and the cancel handling. Each role only defines `printMenu()` and `handleChoice()`, so none of this is duplicated.
-- **Stock policy: reserve on order.** Stock is subtracted when the Cashier places an order. Pending orders therefore can never over-order, and every order in the queue can always be processed. Processing just removes the order from the front of the queue. A cashier can still back out of an order with `C` while entering it; nothing is reserved until the order is finished with `D`. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
+- **Stock policy: deduct on processing.** The inventory changes **only** when the Ice Cream Maker processes an order. Adding an order to the queue does not touch the stock.
+  - **Placing an order:** it is accepted only if the *available* stock covers it. Available stock is the current stock minus everything already in pending orders, so the queue never promises more than exists.
+  - **Processing an order:** stock is checked again, in case the Manager lowered it in the meantime. If there is not enough, the order stays at the front of the queue and nothing is deducted.
+  - **Backing out:** the cashier can still cancel an order with `C` while entering it. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
 - **Queue location.** The queue lives in `IceCreamMaker`, as the specification requires. The Cashier is given a reference to it and calls `placeOrder()`.
 - **Where each algorithm is used.** Each one has a real job:
   - **Insertion Sort**: the *Sort products* option (by quantity or price, ascending or descending, stable).
@@ -51,6 +54,8 @@ It is written in plain Java with no external libraries.
 ```
 dsa-finals-group4/
 ├── README.md
+├── run.bat                               compile and run (Windows)
+├── run.sh                                compile and run (macOS / Linux)
 ├── src/
 │   ├── Main.java                         entry point, role selection, sample products
 │   ├── Authentication.java               password constants and login
@@ -82,7 +87,13 @@ dsa-finals-group4/
 
 ## 5. Compile and Run (JDK 11 or newer)
 
-From the project folder:
+**Quick start:**
+- **Windows:** double-click `run.bat`, or run it from a terminal in the project folder.
+- **macOS / Linux:** run `sh run.sh`.
+
+Both scripts compile everything into `out/` and start the program.
+
+Or compile and run manually from the project folder:
 
 ```bash
 javac -d out src/*.java
@@ -104,15 +115,15 @@ java -cp out Main < test/demo-input.txt
 
 ## 6. Testing and Sample Output
 
-`AlgorithmTest` runs 68 checks, and all of them pass. They cover:
+`AlgorithmTest` runs 75 checks, and all of them pass. They cover:
 - Insertion, Merge and Quick Sort (by price, quantity and ID, stability, empty and single-item lists)
 - Insertion Sort by quantity and by price in descending order
 - The quantity limits: a new product needs 1-100; an update allows 0-100
 - Linear and Binary Search (including unsorted input, missing IDs and empty lists)
 - The price limits: 30.00 and 120.00 accepted; 29.99, 120.01, 25, 130 and 150 rejected, both in the constructor and in update
 - The inventory rules
-- Order placement and stock reservation, including over-ordering across lines and orders
-- FIFO processing
+- Order placement leaving the inventory unchanged, and rejecting orders that exceed the stock not yet promised to pending orders
+- FIFO processing that subtracts stock only when each order is processed, and keeps an order in the queue if the stock dropped below what it needs
 - The pending-order list keeping arrival order as orders are processed and added
 - The ArrayDeque undo stack
 
@@ -248,7 +259,14 @@ Order ORD-003 processed successfully.
 No pending orders to process.
 ```
 
-**Stock consistency.** The final inventory in the demo shows:
+Each processed order prints the inventory change, for example:
+```
+Order ORD-001 processed successfully. Inventory updated:
+    - IC001 Vanilla: -2, stock now 48
+    - IC002 Mango: -3, stock now 22
+```
+
+**Stock consistency.** In the demo, the inventory viewed by the cashier *after* placing three orders is still unchanged (Vanilla 50, Mango 25, Strawberry 15, Cookies and Cream 30). The stock only drops when the Ice Cream Maker processes each order:
 - Vanilla 50 → 48 and Mango 25 → 22 (ORD-001)
 - Strawberry 15 → 0 (ORD-002)
 - Cookies and Cream 30 → 28 (ORD-003)
@@ -264,7 +282,7 @@ No pending orders to process.
 | Remove product (checks it exists, confirmation, blocked while in a pending order) | `Manager.removeProduct`, `Inventory.removeProduct` | ✅ |
 | Display inventory | `User.viewInventory` | ✅ |
 | Search by ID / flavor | `User.searchProducts`, `SearchAlgorithms` | ✅ |
-| Adjust inventory quantities | `Inventory.updateQuantity`, `Inventory.adjustStock` (reserve / return) | ✅ |
+| Adjust inventory quantities | `Inventory.updateQuantity`, `Inventory.adjustStock` (subtracted when an order is processed) | ✅ |
 | Password per role, retry, cancel, passwords never printed, constants in one class | `Authentication` | ✅ |
 | Price 30.00–120.00 on add and update, enforced in logic | `Product.isValidPrice` / `setPrice`, `Inventory`, `InputHelper.readPrice` | ✅ |
 | Sort products: choose quantity or price, then ascending or descending; Insertion Sort; no algorithm menu; all roles | `User.sortProducts` | ✅ |
@@ -276,9 +294,10 @@ No pending orders to process.
 | Main menu order: Cashier, Ice Cream Maker, Manager, Exit | `Main.main` | ✅ |
 | Ice Cream Maker menu (4 = view pending, 5 = process next, no cancel option) | `IceCreamMaker.printMenu` | ✅ |
 | Cashier creates validated orders with multiple items and unique IDs | `Cashier.addNewOrder`, `IceCreamMaker.placeOrder` | ✅ |
-| No over-ordering across pending orders | Stock reserved in `placeOrder`; the cart checks quantity already in the order | ✅ |
+| No over-ordering across pending orders | `placeOrder` and the cart compare against stock minus pending orders (`getAvailableQuantity`) | ✅ |
 | Cashier and Ice Cream Maker can view pending orders | `IceCreamMaker.displayPendingOrders` | ✅ |
 | FIFO processing; order removed only once processed | `IceCreamMaker.processNextOrderFromMenu` (`peek`, confirm, `poll`) | ✅ |
+| Inventory updated only when an order is processed, with a stock re-check | `IceCreamMaker.completeNextOrder`, `hasStockToProcess` | ✅ |
 | Empty queue handled | process and view options | ✅ |
 | `C` cancels any multi-step input without saving partial data | `InputHelper`, `OperationCancelledException`, `User.showMenu` | ✅ |
 | Invalid menu choices handled | `InputHelper.readMenuChoice` | ✅ |
