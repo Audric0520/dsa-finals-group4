@@ -56,6 +56,7 @@ public abstract class User {
                 return;
             }
             try {
+                Terminal.clearScreen();
                 handleChoice(choice);
                 Terminal.pause();
             } catch (OperationCancelledException e) {

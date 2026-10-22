@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import algorithms.SortAlgorithms;
 import console.InputHelper;
 import console.OperationCancelledException;
 import models.Inventory;
@@ -91,10 +92,7 @@ public class Cashier extends User {
             System.out.println("The inventory is empty. No orders can be made.");
             return;
         }
-        System.out.println();
-        System.out.println("--- New Customer Order ---");
-        System.out.println("Type a product ID (and quantity, e.g. IC001 2) to add it,");
-        System.out.println("or one of: done, undo, cancel");
+        printOrderHeader();
         ArrayDeque<OrderItem> cart = new ArrayDeque<>();
 
         while (true) {
@@ -130,6 +128,31 @@ public class Cashier extends User {
                 System.out.println("    - " + item);
             }
         }
+    }
+
+    /**
+     * Lists the products at the top of the order screen, so the cashier can read the IDs
+     * instead of remembering them. "Left" is the stock not yet claimed by pending orders.
+     */
+    private void printOrderHeader() {
+        ArrayList<Product> products = inventory.getProducts();
+        SortAlgorithms.quickSort(products, SortAlgorithms.BY_ID);
+        String header = String.format(Product.TABLE_ROW_FORMAT, "ID", "Flavor", "Size", "Type", "Left", "Price");
+        String line = "-".repeat(header.length());
+
+        System.out.println();
+        System.out.println("=== NEW CUSTOMER ORDER ===");
+        System.out.println(line);
+        System.out.println(header);
+        System.out.println(line);
+        for (Product product : products) {
+            int left = Math.max(0, iceCreamMaker.getAvailableQuantity(product));
+            System.out.println(String.format(Product.TABLE_ROW_FORMAT, product.getProductId(), product.getFlavor(),
+                    String.valueOf(product.getServingSize()), product.getContainerType(),
+                    String.valueOf(left), String.format("P%.2f", product.getPrice())));
+        }
+        System.out.println(line);
+        System.out.println("Add: product ID and quantity (IC001 2)  |  Commands: done, undo, cancel");
     }
 
     // Losing a long order to one mistyped letter would mean asking the customer again, so ask first.

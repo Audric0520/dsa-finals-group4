@@ -260,9 +260,17 @@ Cashier password:
 
 **Order entry (`order>` prompt, running total, skip, undo, confirmed cancel, repeated product merged)**
 ```
---- New Customer Order ---
-Type a product ID (and quantity, e.g. IC001 2) to add it,
-or one of: done, undo, cancel
+=== NEW CUSTOMER ORDER ===
+------------------------------------------------------------
+ID     | Flavor             | Size | Type |  Left |    Price
+------------------------------------------------------------
+IC001  | Vanilla            | S    | Cone |    50 |   P45.00
+IC002  | Mango              | M    | Cone |    25 |   P60.00
+IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
+IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
+------------------------------------------------------------
+Add: product ID and quantity (IC001 2)  |  Commands: done, undo, cancel
 order> IC001 2
 Added 2x IC001 Vanilla (S, Cone) = P90.00 | Total: P90.00
 order> IC003
