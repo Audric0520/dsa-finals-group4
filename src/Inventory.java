@@ -91,10 +91,25 @@ public class Inventory {
         return products.isEmpty();
     }
 
+    public int size() {
+        return products.size();
+    }
+
+    /** Number of products with 0 in stock (shown to the Manager as products to restock). */
+    public int countOutOfStock() {
+        int count = 0;
+        for (Product product : products) {
+            if (product.getQuantity() == 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     /** Prints a title and the products as a table. Used by view, search and sort. */
     public static void displayProducts(String title, ArrayList<Product> list) {
         System.out.println();
-        System.out.println("=== " + title + " ===");
+        Terminal.title("=== " + title + " ===");
         if (list.isEmpty()) {
             System.out.println("No products to display.");
             return;
@@ -105,7 +120,9 @@ public class Inventory {
         System.out.println(header);
         System.out.println(line);
         for (Product product : list) {
-            System.out.println(product);
+            // Sold-out rows stand out in red (the row is coloured whole, so the columns stay aligned)
+            System.out.println(product.getQuantity() == 0 ? Terminal.style(product.toString(), Terminal.Style.ERROR)
+                    : product.toString());
         }
         System.out.println(line);
     }

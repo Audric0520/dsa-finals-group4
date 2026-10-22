@@ -1,38 +1,43 @@
-import java.util.Scanner;
-
 /**
  * Reads and validates console input. Every method keeps asking until the input is valid,
- * so a typo never crashes the program.
+ * so a typo never crashes the program. The actual reading is done by Terminal.
  *
- * Except for readMenuChoice and readLine, every method lets the user type C to cancel.
- * Cancelling throws OperationCancelledException, which the role menu catches.
+ * Except for readMenuChoice, readLine and readPassword, every method lets the user type C
+ * to cancel. Cancelling throws OperationCancelledException, which the role menu catches.
  */
 public class InputHelper {
     public static final String CANCEL = "C";
 
-    private static final Scanner scanner = new Scanner(System.in);
-
     /** Reads one trimmed line with no validation and no cancel handling. */
     public static String readLine(String prompt) {
-        System.out.print(prompt);
-        if (!scanner.hasNextLine()) {
-            // Input stream closed (e.g. end of a test input file): exit cleanly
-            System.out.println();
-            System.out.println("No more input. Exiting program.");
-            System.exit(0);
-        }
-        return scanner.nextLine().trim();
+        return Terminal.readLine(prompt).trim();
     }
 
-    /** Menu choices do not support C, because [0] already means log out or exit. */
+    /** Reads a line without showing what is typed. */
+    public static String readPassword(String prompt) {
+        return Terminal.readPassword(prompt).trim();
+    }
+
+    /**
+     * Menu choices do not support C, because [0] already means log out or exit.
+     * Like a shell, pressing Enter on an empty line just shows the prompt again,
+     * and q, quit or exit work the same as [0].
+     */
     public static int readMenuChoice(int max) {
+        Terminal.showNotice();
         while (true) {
-            String text = readLine("Choice: ");
+            String text = readLine("Choice [0-" + max + "]: ");
+            if (text.isEmpty()) {
+                continue;
+            }
+            if (text.equalsIgnoreCase("q") || text.equalsIgnoreCase("quit") || text.equalsIgnoreCase("exit")) {
+                return 0;
+            }
             Integer number = parseIntInRange(text, 0, max);
             if (number != null) {
                 return number;
             }
-            System.out.printf("Invalid choice. Please enter a number from 0 to %d.%n", max);
+            Terminal.error(String.format("Invalid choice \"%s\". Please enter a number from 0 to %d.", text, max));
         }
     }
 
@@ -46,7 +51,7 @@ public class InputHelper {
             if (!text.isEmpty()) {
                 return text;
             }
-            System.out.println("Input cannot be empty. Try again.");
+            Terminal.error("Input cannot be empty. Try again.");
         }
     }
 
@@ -56,12 +61,12 @@ public class InputHelper {
             if (number != null) {
                 return number;
             }
-            System.out.printf("Please enter a whole number from %d to %d.%n", min, max);
+            Terminal.error(String.format("Please enter a whole number from %d to %d.", min, max));
         }
     }
 
-    // Returns the number, or null if the text is not a whole number in the range.
-    private static Integer parseIntInRange(String text, int min, int max) {
+    /** Returns the number, or null if the text is not a whole number in the range. */
+    public static Integer parseIntInRange(String text, int min, int max) {
         try {
             int number = Integer.parseInt(text);
             if (number >= min && number <= max) {
@@ -85,8 +90,8 @@ public class InputHelper {
             } catch (NumberFormatException e) {
                 // falls through to the error message below
             }
-            System.out.printf("Invalid price. Price must be from P%.2f to P%.2f.%n", Product.MIN_PRICE,
-                    Product.MAX_PRICE);
+            Terminal.error(String.format("Invalid price. Price must be from P%.2f to P%.2f.", Product.MIN_PRICE,
+                    Product.MAX_PRICE));
         }
     }
 
@@ -101,7 +106,7 @@ public class InputHelper {
             if (isValidProductId(id)) {
                 return id;
             }
-            System.out.println("Product ID must look like IC001 (IC + 3 digits).");
+            Terminal.error("Product ID must look like IC001 (IC + 3 digits).");
         }
     }
 
@@ -111,7 +116,7 @@ public class InputHelper {
             if (flavor.matches("[a-zA-Z ]+") && flavor.length() <= 18) {
                 return flavor;
             }
-            System.out.println("Flavor must contain only letters and spaces (max 18 characters).");
+            Terminal.error("Flavor must contain only letters and spaces (max 18 characters).");
         }
     }
 
@@ -121,7 +126,7 @@ public class InputHelper {
             if (size.equals("S") || size.equals("M") || size.equals("L")) {
                 return size.charAt(0);
             }
-            System.out.println("Serving size must be S, M or L.");
+            Terminal.error("Serving size must be S, M or L.");
         }
     }
 
@@ -134,20 +139,32 @@ public class InputHelper {
             if (type.equals("cup")) {
                 return "Cup";
             }
-            System.out.println("Container type must be cone or cup.");
+            Terminal.error("Container type must be cone or cup.");
         }
     }
 
-    public static boolean readYesNo(String prompt) {
+    /**
+     * Asks a yes/no question. As in most command-line tools, the capital letter in [Y/n] or
+     * [y/N] is the default answer, used when the user just presses Enter.
+     */
+    public static boolean readYesNo(String question, boolean defaultAnswer) {
+        String choices = defaultAnswer ? "[Y/n]" : "[y/N]";
         while (true) {
-            String answer = readText(prompt).toUpperCase();
+            String answer = readLine(question + " " + choices + " (or C to cancel): ").toUpperCase();
+            if (answer.equals(CANCEL)) {
+                throw new OperationCancelledException();
+            }
+            if (answer.isEmpty()) {
+                return defaultAnswer;
+            }
             if (answer.equals("Y") || answer.equals("YES")) {
                 return true;
             }
             if (answer.equals("N") || answer.equals("NO")) {
                 return false;
             }
-            System.out.println("Please enter Y or N (or C to cancel).");
+            Terminal.error("Please enter Y or N, press Enter for " + (defaultAnswer ? "Y" : "N")
+                    + ", or type C to cancel.");
         }
     }
 }

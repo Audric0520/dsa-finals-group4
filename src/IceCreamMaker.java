@@ -27,7 +27,7 @@ public class IceCreamMaker extends User {
 
     @Override
     protected void printMenu() {
-        System.out.println("========== ICE CREAM MAKER MENU ==========");
+        Terminal.title("========== ICE CREAM MAKER MENU ==========");
         System.out.println("[1] View inventory");
         System.out.println("[2] Search products");
         System.out.println("[3] Sort products");
@@ -39,6 +39,12 @@ public class IceCreamMaker extends User {
     @Override
     protected int getLastOption() {
         return 5;
+    }
+
+    @Override
+    protected String getStatusLine() {
+        Order next = pendingOrders.peek();
+        return "Pending orders: " + pendingOrders.size() + " | Next: " + (next == null ? "none" : next.getOrderId());
     }
 
     @Override
@@ -156,7 +162,8 @@ public class IceCreamMaker extends User {
     }
 
     public void displayPendingOrders() {
-        System.out.println("\n--- Pending Orders (first = next to process) ---");
+        System.out.println();
+        Terminal.title("--- Pending Orders (first = next to process) ---");
         if (pendingOrders.isEmpty()) {
             System.out.println("No pending orders.");
             return;
@@ -173,21 +180,21 @@ public class IceCreamMaker extends User {
     private void processNextOrderFromMenu() {
         Order next = pendingOrders.peek(); // look at the oldest order without removing it
         if (next == null) {
-            System.out.println("No pending orders to process.");
+            Terminal.warning("No pending orders to process.");
             return;
         }
         System.out.println("\nNext order: " + next);
         if (!hasStockToProcess(next)) {
-            System.out.println("Cannot process " + next.getOrderId() + ": not enough stock for this order.");
-            System.out.println("The order stays at the front of the queue. Ask the Manager to restock first.");
+            Terminal.error("Cannot process " + next.getOrderId() + ": not enough stock for this order.");
+            Terminal.error("The order stays at the front of the queue. Ask the Manager to restock first.");
             return;
         }
-        if (!InputHelper.readYesNo("Process this order? (Y/N, or C to cancel): ")) {
-            System.out.println("Order " + next.getOrderId() + " was left in the queue.");
+        if (!InputHelper.readYesNo("Process this order?", true)) {
+            Terminal.warning("Order " + next.getOrderId() + " was left in the queue.");
             return;
         }
         completeNextOrder();
-        System.out.println("Order " + next.getOrderId() + " processed successfully. Inventory updated:");
+        Terminal.success("Order " + next.getOrderId() + " processed successfully. Inventory updated:");
         for (OrderItem item : next.getItems()) {
             Product product = item.getProduct();
             System.out.println("    - " + product.getProductId() + " " + product.getFlavor() + ": -"

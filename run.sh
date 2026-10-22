@@ -9,4 +9,4 @@ javac -d out src/*.java || {
     exit 1
 }
 
-java -cp out Main
+java -cp out Main "$@"

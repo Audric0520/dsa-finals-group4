@@ -12,5 +12,5 @@ if errorlevel 1 (
     exit /b 1
 )
 
-java -cp out Main
+java -cp out Main %*
 pause
