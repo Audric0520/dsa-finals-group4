@@ -1,5 +1,9 @@
+package algorithms;
+
 import java.util.ArrayList;
 import java.util.Comparator;
+
+import models.Product;
 
 /**
  * Hand-written sorting algorithms. Each method sorts the given list in ascending

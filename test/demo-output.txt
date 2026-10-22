@@ -10,9 +10,9 @@ Choice [0-3]:
 Choice [0-3]: 9
 Invalid choice "9". Please enter a number from 0 to 3.
 Choice [0-3]: 3
-Enter Manager password (hidden, or C to cancel): 
+Enter Manager password (or C to cancel): 
 Incorrect password for Manager. 2 attempts left.
-Enter Manager password (hidden, or C to cancel): 
+Enter Manager password (or C to cancel): 
 Access granted. Welcome, Manager!
 
 ========== MANAGER MENU ==========
@@ -368,11 +368,11 @@ Manager logged out.
 [3] Manager
 [0] Exit
 Choice [0-3]: 1
-Enter Cashier password (hidden, or C to cancel): 
+Enter Cashier password (or C to cancel): 
 Incorrect password for Cashier. 2 attempts left.
-Enter Cashier password (hidden, or C to cancel): 
+Enter Cashier password (or C to cancel): 
 Incorrect password for Cashier. 1 attempt left.
-Enter Cashier password (hidden, or C to cancel): 
+Enter Cashier password (or C to cancel): 
 3 incorrect password attempts for Cashier. Returning to Main Menu...
 
 ========================================
@@ -383,7 +383,7 @@ Enter Cashier password (hidden, or C to cancel):
 [3] Manager
 [0] Exit
 Choice [0-3]: 1
-Enter Cashier password (hidden, or C to cancel): 
+Enter Cashier password (or C to cancel): 
 Login cancelled. Returning to Main Menu...
 
 ========================================
@@ -394,7 +394,7 @@ Login cancelled. Returning to Main Menu...
 [3] Manager
 [0] Exit
 Choice [0-3]: 1
-Enter Cashier password (hidden, or C to cancel): 
+Enter Cashier password (or C to cancel): 
 Access granted. Welcome, Cashier!
 
 ========== CASHIER MENU ==========
@@ -656,7 +656,7 @@ Cashier logged out.
 [3] Manager
 [0] Exit
 Choice [0-3]: 3
-Enter Manager password (hidden, or C to cancel): 
+Enter Manager password (or C to cancel): 
 Access granted. Welcome, Manager!
 
 ========== MANAGER MENU ==========
@@ -696,9 +696,9 @@ Manager logged out.
 [3] Manager
 [0] Exit
 Choice [0-3]: 2
-Enter Ice Cream Maker password (hidden, or C to cancel): 
+Enter Ice Cream Maker password (or C to cancel): 
 Incorrect password for Ice Cream Maker. 2 attempts left.
-Enter Ice Cream Maker password (hidden, or C to cancel): 
+Enter Ice Cream Maker password (or C to cancel): 
 Access granted. Welcome, Ice Cream Maker!
 
 ========== ICE CREAM MAKER MENU ==========
@@ -902,7 +902,7 @@ Ice Cream Maker logged out.
 [3] Manager
 [0] Exit
 Choice [0-3]: 1
-Enter Cashier password (hidden, or C to cancel): 
+Enter Cashier password (or C to cancel): 
 Access granted. Welcome, Cashier!
 
 ========== CASHIER MENU ==========

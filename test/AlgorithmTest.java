@@ -2,6 +2,16 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+import algorithms.SearchAlgorithms;
+import algorithms.SortAlgorithms;
+import console.InputHelper;
+import console.Terminal;
+import models.Inventory;
+import models.Order;
+import models.OrderItem;
+import models.Product;
+import roles.IceCreamMaker;
+
 /**
  * Plain-Java checks for the sorting, searching, inventory and order-queue logic (no JUnit needed).
  * Prints PASS/FAIL for each check and a summary at the end.

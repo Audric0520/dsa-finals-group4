@@ -1,5 +1,15 @@
+package roles;
+
 import java.util.ArrayList;
 import java.util.Comparator;
+
+import algorithms.SearchAlgorithms;
+import algorithms.SortAlgorithms;
+import console.InputHelper;
+import console.OperationCancelledException;
+import console.Terminal;
+import models.Inventory;
+import models.Product;
 
 /**
  * Base class for the three roles.

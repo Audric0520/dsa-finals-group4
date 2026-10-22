@@ -7,7 +7,7 @@ It is written in plain Java with no external libraries.
 
 | Feedback | Correction |
 |---|---|
-| Role passwords | `Authentication` stores the three password constants. Each role menu needs its own password. As with `sudo`, nothing appears while the password is typed and a wrong password can be retried up to 3 times (the message shows the attempts left). `C` cancels back to the main menu, and passwords are never printed. |
+| Role passwords | `Authentication` stores the three password constants. Each role menu needs its own password. As with `sudo`, a wrong password can be retried up to 3 times (the message shows the attempts left). `C` cancels back to the main menu. The password is visible while it is typed, but the program itself never prints a password. |
 | Price limits | Prices must be from **P30.00 to P120.00**, inclusive. The rule is checked in three places: at input (`InputHelper.readPrice`), in the inventory logic (`Inventory.addProduct` / `updatePrice`), and in the model (`Product.setPrice` throws on an invalid price). This covers both add and update. |
 | Sorting | **Sort products** asks for the key (`1` = Quantity, `2` = Price) and the order (`1` = Ascending, `2` = Descending). It then sorts with Insertion Sort and shows the result with a confirmation. There is no algorithm menu, and the behaviour is the same for every role. |
 | Quantity limit | A new product must start with **1 to 100** in stock. This is checked at input and in `Inventory.addProduct`. When updating an existing product, 0-100 is allowed, because a product can be sold out. |
@@ -57,7 +57,7 @@ When it starts, the program checks what it is connected to (`System.console()`),
 
 | | Interactive mode (a real terminal window) | Plain mode (input from a file or pipe, an IDE console, or `--plain`) |
 |---|---|---|
-| Passwords | Read without echo; nothing appears while typing | Never printed by the program |
+| Passwords | Visible while typed, like any other answer | A password read from a file is not copied into the output, so the saved output never contains one |
 | Screens | Each menu starts on a cleared screen; results stay up until **Enter** is pressed | Plain scrolling output, no pauses |
 | Answers | Shown by the terminal as they are typed | Answers read from a file or pipe are printed after their prompt, so the saved output reads like a real session. Answers typed in an IDE console are not printed again, because the IDE already shows them |
 | Colours | Errors red, successes green, warnings yellow, titles cyan, status lines dimmed, sold-out table rows red | None, so the output can be saved and compared |
@@ -77,29 +77,35 @@ The rest works the same in both modes:
 ```
 dsa-finals-group4/
 ├── README.md
-├── run.bat                               compile and run (Windows)
-├── run.sh                                compile and run (macOS / Linux)
+├── run.bat                                  compile and run (Windows)
+├── run.sh                                   compile and run (macOS / Linux)
 ├── src/
-│   ├── Main.java                         entry point, role selection, sample products
-│   ├── Authentication.java               password constants and login (hidden, 3 attempts)
-│   ├── OperationCancelledException.java  thrown when the user types C
-│   ├── Terminal.java                     terminal detection, screens, hidden input, colours
-│   ├── InputHelper.java                  validated console input with C to cancel
-│   ├── Product.java                      product model (price range enforced)
-│   ├── Inventory.java                    ArrayList + HashMap, product rules
-│   ├── OrderItem.java                    one product line in an order
-│   ├── Order.java                        a customer order (one or more items)
-│   ├── SortAlgorithms.java               Insertion Sort, Merge Sort, Quick Sort
-│   ├── SearchAlgorithms.java             Linear Search, Binary Search
-│   ├── User.java                         shared menu loop, view / search / sort
-│   ├── Manager.java
-│   ├── Cashier.java                      order entry (ArrayDeque stack for undo)
-│   └── IceCreamMaker.java                Queue of pending orders (FIFO)
+│   ├── Main.java                            entry point, role selection, sample products
+│   ├── roles/                               the people who use the system
+│   │   ├── User.java                        shared menu loop, view / search / sort
+│   │   ├── Cashier.java                     order entry (ArrayDeque stack for undo)
+│   │   ├── IceCreamMaker.java               Queue of pending orders (FIFO)
+│   │   ├── Manager.java                     add, update and remove products
+│   │   └── Authentication.java              password constants and login (3 attempts)
+│   ├── models/                              the shop's data
+│   │   ├── Product.java                     product model (price range enforced)
+│   │   ├── Order.java                       a customer order (one or more items)
+│   │   ├── OrderItem.java                   one product line in an order
+│   │   └── Inventory.java                   ArrayList + HashMap, product rules
+│   ├── algorithms/                          hand-written sorting and searching
+│   │   ├── SortAlgorithms.java              Insertion Sort, Merge Sort, Quick Sort
+│   │   └── SearchAlgorithms.java            Linear Search, Binary Search
+│   └── console/                             reading input and controlling the terminal
+│       ├── Terminal.java                    terminal detection, screens, colours
+│       ├── InputHelper.java                 validated console input with C to cancel
+│       └── OperationCancelledException.java thrown when the user types C
 └── test/
-    ├── AlgorithmTest.java                automated checks (plain Java, no JUnit)
-    ├── demo-input.txt                    scripted session covering every feature
-    └── demo-output.txt                   output produced by that session
+    ├── AlgorithmTest.java                   automated checks (plain Java, no JUnit)
+    ├── demo-input.txt                       scripted session covering every feature
+    └── demo-output.txt                      output produced by that session
 ```
+
+Each folder under `src` is a Java package with the same name (`package roles;`, `package models;` and so on), so IDEs such as IntelliJ, Eclipse and VS Code open the project without errors. `Main` stays directly in `src`.
 
 ## 5. Passwords (demonstration only)
 
@@ -115,39 +121,34 @@ dsa-finals-group4/
 - **Windows:** double-click `run.bat`, or run it from a terminal in the project folder.
 - **macOS / Linux:** run `sh run.sh`.
 
-Both scripts compile everything into `out/` and start the program. Any options are passed on, for example `run.bat --plain`.
+The scripts compile into your system's temporary folder, so running the program never adds files or folders to the project.
 
-Or compile and run manually from the project folder:
+| Command | What it does |
+|---|---|
+| `run.bat` / `sh run.sh` | Starts the program |
+| `run.bat test` / `sh run.sh test` | Runs the automated tests |
+| `run.bat demo` / `sh run.sh demo` | Replays the scripted demo session |
 
-```bash
-javac -d out src/*.java
-java -cp out Main
-```
-
-Options:
+Options are passed on to the program, for example `run.bat --plain`:
 
 | Option | Effect |
 |---|---|
-| `--plain` | Plain scrolling output: no screen clearing, no pauses, no colours (passwords stay hidden) |
+| `--plain` | Plain scrolling output: no screen clearing, no pauses, no colours |
 | `--no-color` | Turns colours off only (setting the `NO_COLOR` environment variable does the same) |
 | `-h`, `--help` | Shows the options and exits |
 
 An unknown option prints the usage to standard error and exits with code 2.
 
-> IDE run consoles, and Git Bash in its default setup, do not give Java a real console, so the program runs in plain mode there and cannot hide the password while it is typed. For the full interactive mode, use Windows Terminal, PowerShell, `cmd`, or a macOS/Linux terminal. In Git Bash, `winpty java -cp out Main` also works.
-
-Run the automated tests:
+To compile by hand instead (this creates an `out` folder, which git ignores and which can be deleted at any time):
 
 ```bash
-javac -d out src/*.java test/AlgorithmTest.java
+javac -d out -sourcepath src src/Main.java test/AlgorithmTest.java
+java -cp out Main
 java -cp out AlgorithmTest
-```
-
-Replay the scripted demo session:
-
-```bash
 java -cp out Main < test/demo-input.txt
 ```
+
+> IDE run consoles, and Git Bash in its default setup, do not give Java a real console, so the program runs in plain mode there (no screen clearing or colours). For the full interactive mode, use Windows Terminal, PowerShell, `cmd`, or a macOS/Linux terminal.
 
 ## 7. Testing and Sample Output
 
@@ -164,24 +165,24 @@ java -cp out Main < test/demo-input.txt
 - The ArrayDeque undo stack
 - Number parsing used by menu choices and the one-step `IC001 2` entry, the counts shown in the status lines, and plain mode output containing no colour codes
 
-`test/demo-input.txt` drives every menu of every role. `test/demo-output.txt` is the real output. Because the answers come from a file, each one is printed after its prompt. Excerpts:
+`test/demo-input.txt` drives every menu of every role. `test/demo-output.txt` is the real output. Because the answers come from a file, each one is printed after its prompt (except passwords). Excerpts:
 
-**Authentication (passwords are never shown; 3 attempts)**
+**Authentication (3 attempts; a password read from a file is not copied into the output)**
 ```
 Choice [0-3]: 3
-Enter Manager password (hidden, or C to cancel):
+Enter Manager password (or C to cancel):
 Incorrect password for Manager. 2 attempts left.
-Enter Manager password (hidden, or C to cancel):
+Enter Manager password (or C to cancel):
 Access granted. Welcome, Manager!
 ...
-Enter Cashier password (hidden, or C to cancel):
+Enter Cashier password (or C to cancel):
 Incorrect password for Cashier. 2 attempts left.
-Enter Cashier password (hidden, or C to cancel):
+Enter Cashier password (or C to cancel):
 Incorrect password for Cashier. 1 attempt left.
-Enter Cashier password (hidden, or C to cancel):
+Enter Cashier password (or C to cancel):
 3 incorrect password attempts for Cashier. Returning to Main Menu...
 ...
-Enter Cashier password (hidden, or C to cancel):
+Enter Cashier password (or C to cancel):
 Login cancelled. Returning to Main Menu...
 ```
 
@@ -371,7 +372,7 @@ Thank you for using the SC Ice Cream Management System. Goodbye!
 | Display inventory | `User.viewInventory` | ✅ |
 | Search by ID / flavor | `User.searchProducts`, `SearchAlgorithms` | ✅ |
 | Adjust inventory quantities | `Inventory.updateQuantity`, `Inventory.adjustStock` (subtracted when an order is processed) | ✅ |
-| Password per role, retry (3 attempts), cancel, hidden while typed, passwords never printed, constants in one class | `Authentication`, `Terminal.readPassword` | ✅ |
+| Password per role, retry (3 attempts), cancel, passwords never printed, constants in one class | `Authentication`, `Terminal.readPassword` | ✅ |
 | Price 30.00–120.00 on add and update, enforced in logic | `Product.isValidPrice` / `setPrice`, `Inventory`, `InputHelper.readPrice` | ✅ |
 | Sort products: choose quantity or price, then ascending or descending; Insertion Sort; no algorithm menu; all roles | `User.sortProducts` | ✅ |
 | New product quantity must be 1-100 | `Manager.addProduct`, `Inventory.addProduct` | ✅ |
@@ -400,6 +401,7 @@ Thank you for using the SC Ice Cream Management System. Goodbye!
 | Binary Search on a list sorted by the same key | `SearchAlgorithms.binarySearchById` | ✅ |
 | No built-in sort or search replacing the required algorithms | Only hand-written algorithms are used | ✅ |
 | Standard Java, console only, no external libraries | All files | ✅ |
-| Terminal-aware behaviour: cleared screens, pauses, colours and hidden input in a real terminal; plain, replayable output otherwise | `Terminal` | ✅ |
+| Terminal-aware behaviour: cleared screens, pauses and colours in a real terminal; plain, replayable output otherwise | `Terminal` | ✅ |
+| Source files grouped by purpose into packages (`roles`, `models`, `algorithms`, `console`); builds leave no files in the project | `src/`, `run.bat`, `run.sh` | ✅ |
 | Status line under each role menu | `User.showMenu`, each role's `getStatusLine` | ✅ |
 | `[Y/n]` / `[y/N]` defaults; warning before exiting with pending orders | `InputHelper.readYesNo`, `Main.confirmExit` | ✅ |

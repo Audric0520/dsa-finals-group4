@@ -1,3 +1,5 @@
+package console;
+
 /**
  * Thrown by InputHelper when the user types C at an input prompt.
  * The role menu catches it in one place and returns to the menu, so a cancelled

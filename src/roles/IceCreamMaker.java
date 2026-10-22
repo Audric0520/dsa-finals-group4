@@ -1,6 +1,15 @@
+package roles;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+
+import console.InputHelper;
+import console.Terminal;
+import models.Inventory;
+import models.Order;
+import models.OrderItem;
+import models.Product;
 
 /**
  * IceCreamMaker: views, searches and sorts the inventory, and owns the queue of

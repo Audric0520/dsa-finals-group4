@@ -1,6 +1,15 @@
+package roles;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import console.InputHelper;
+import console.Terminal;
+import models.Inventory;
+import models.Order;
+import models.OrderItem;
+import models.Product;
 
 /**
  * Cashier: views, searches and sorts the inventory, enters customer orders and views

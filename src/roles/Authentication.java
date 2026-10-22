@@ -1,7 +1,12 @@
+package roles;
+
+import console.InputHelper;
+import console.Terminal;
+
 /**
  * Simple password check for each role (for a school demonstration, not real security).
- * The passwords are stored only here and are never printed. Like sudo, the password is
- * not shown while it is typed and only a few attempts are allowed.
+ * The passwords are stored only here and are never printed. Like sudo, only a few
+ * attempts are allowed.
  */
 public class Authentication {
     private static final String CASHIER_PASSWORD = "ICCashier123";
@@ -21,7 +26,7 @@ public class Authentication {
     public static boolean login(String roleName) {
         String correctPassword = getPassword(roleName);
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            String entered = InputHelper.readPassword("Enter " + roleName + " password (hidden, or C to cancel): ");
+            String entered = InputHelper.readPassword("Enter " + roleName + " password (or C to cancel): ");
             if (entered.equalsIgnoreCase(InputHelper.CANCEL)) {
                 Terminal.notice(Terminal.Style.WARNING, "Login cancelled. Returning to Main Menu...");
                 return false;

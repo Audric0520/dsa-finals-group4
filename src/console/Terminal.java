@@ -1,3 +1,5 @@
+package console;
+
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
@@ -8,7 +10,6 @@ import java.io.InputStreamReader;
  * it checks what it is connected to and behaves accordingly.
  *
  * Interactive mode - a person is typing in a real terminal window:
- *   - passwords are read without echo, so nothing appears while typing
  *   - every menu starts on a cleared screen, and results stay up until Enter is pressed
  *   - errors, successes and warnings are coloured (if the terminal supports colours)
  *
@@ -110,13 +111,15 @@ public class Terminal {
         return line;
     }
 
-    /** Like readLine, but what is typed is never shown on the screen or in the output. */
+    /**
+     * Reads a password. It stays visible while it is typed, like any other answer, but one
+     * read from a file is not copied into the output, so the program never prints a password.
+     */
     public static String readPassword(String prompt) {
         System.out.print(prompt);
         System.out.flush();
         if (console != null) {
-            char[] password = console.readPassword();
-            return endOfInputIfNull(password == null ? null : new String(password));
+            return endOfInputIfNull(console.readLine());
         }
         boolean fromFile = isInputWaiting();
         String line = readInputLine();

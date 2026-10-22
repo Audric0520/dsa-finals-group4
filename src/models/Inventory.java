@@ -1,5 +1,9 @@
+package models;
+
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import console.Terminal;
 
 /**
  * Stores and manages all ice cream products.

@@ -1,5 +1,15 @@
 import java.io.PrintStream;
 
+import console.InputHelper;
+import console.OperationCancelledException;
+import console.Terminal;
+import models.Inventory;
+import models.Product;
+import roles.Authentication;
+import roles.Cashier;
+import roles.IceCreamMaker;
+import roles.Manager;
+
 /**
  * SC Ice Cream Management System - entry point.
  * One shared Inventory is used by all roles, and each role object is created once,
@@ -79,7 +89,7 @@ public class Main {
     }
 
     private static void printUsage(PrintStream out) {
-        out.println("Usage: java -cp out Main [options]");
+        out.println("Usage: run.bat [options]   (macOS / Linux: sh run.sh [options])");
         out.println();
         out.println("Options:");
         out.println("  --plain      plain scrolling output: no screen clearing, no pauses, no colours");

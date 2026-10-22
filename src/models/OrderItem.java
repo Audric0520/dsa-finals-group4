@@ -1,3 +1,5 @@
+package models;
+
 /**
  * One line of a customer order: a product and how many of it.
  */

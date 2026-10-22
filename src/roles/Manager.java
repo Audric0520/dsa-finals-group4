@@ -1,3 +1,10 @@
+package roles;
+
+import console.InputHelper;
+import console.Terminal;
+import models.Inventory;
+import models.Product;
+
 /**
  * Manager: views, sorts and searches the inventory and adds, updates and removes products.
  */

@@ -1,3 +1,7 @@
+package console;
+
+import models.Product;
+
 /**
  * Reads and validates console input. Every method keeps asking until the input is valid,
  * so a typo never crashes the program. The actual reading is done by Terminal.
