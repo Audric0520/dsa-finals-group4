@@ -89,7 +89,7 @@ public class Main {
     }
 
     private static void printUsage(PrintStream out) {
-        out.println("Usage: run.bat [options]   (macOS / Linux: sh run.sh [options])");
+        out.println("Usage: java -cp out Main [options]");
         out.println();
         out.println("Options:");
         out.println("  --plain      plain scrolling output: no screen clearing, no pauses, no colours");
