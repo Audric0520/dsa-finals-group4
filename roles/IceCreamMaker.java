@@ -1,6 +1,14 @@
+package roles;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+
+import console.InputHelper;
+import models.Inventory;
+import models.Order;
+import models.OrderItem;
+import models.Product;
 
 /**
  * IceCreamMaker: views, searches and sorts the inventory, and owns the queue of
@@ -39,6 +47,17 @@ public class IceCreamMaker extends User {
     @Override
     protected int getLastOption() {
         return 5;
+    }
+
+    @Override
+    protected IceCreamMaker getOrderQueue() {
+        return this;
+    }
+
+    @Override
+    protected String getStatusLine() {
+        Order next = pendingOrders.peek();
+        return "Pending orders: " + pendingOrders.size() + " | Next: " + (next == null ? "none" : next.getOrderId());
     }
 
     @Override
@@ -141,14 +160,21 @@ public class IceCreamMaker extends User {
         return pendingOrders.poll();
     }
 
-    /** Used by the Manager: a product that is part of a pending order cannot be removed. */
-    public boolean hasPendingOrderFor(String productId) {
+    /**
+     * IDs of the pending orders that contain the product, e.g. "ORD-001, ORD-003", or "" if none.
+     * Used by the Manager, who cannot remove such a product or change what it is.
+     */
+    public String getPendingOrderIdsFor(String productId) {
+        StringBuilder ids = new StringBuilder();
         for (Order order : pendingOrders) {
             if (order.containsProduct(productId)) {
-                return true;
+                if (ids.length() > 0) {
+                    ids.append(", ");
+                }
+                ids.append(order.getOrderId());
             }
         }
-        return false;
+        return ids.toString();
     }
 
     public ArrayList<Order> getPendingOrders() {
@@ -156,7 +182,8 @@ public class IceCreamMaker extends User {
     }
 
     public void displayPendingOrders() {
-        System.out.println("\n--- Pending Orders (first = next to process) ---");
+        System.out.println();
+        System.out.println("--- Pending Orders (first = next to process) ---");
         if (pendingOrders.isEmpty()) {
             System.out.println("No pending orders.");
             return;
@@ -179,10 +206,19 @@ public class IceCreamMaker extends User {
         System.out.println("\nNext order: " + next);
         if (!hasStockToProcess(next)) {
             System.out.println("Cannot process " + next.getOrderId() + ": not enough stock for this order.");
+            ArrayList<OrderItem> items = next.getItems();
+            for (OrderItem item : items) {
+                Product product = item.getProduct();
+                int needed = totalQuantity(items, product);
+                if (needed > product.getQuantity()) {
+                    System.out.println("    - " + product.getProductId() + " " + product.getFlavor() + ": needs "
+                            + needed + ", only " + product.getQuantity() + " in stock");
+                }
+            }
             System.out.println("The order stays at the front of the queue. Ask the Manager to restock first.");
             return;
         }
-        if (!InputHelper.readYesNo("Process this order? (Y/N, or C to cancel): ")) {
+        if (!InputHelper.readYesNo("Process this order?", true)) {
             System.out.println("Order " + next.getOrderId() + " was left in the queue.");
             return;
         }

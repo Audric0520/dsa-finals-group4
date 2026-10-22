@@ -1,3 +1,5 @@
+package models;
+
 /**
  * One ice cream product in the inventory.
  */

@@ -1,3 +1,15 @@
+import java.io.PrintStream;
+
+import console.InputHelper;
+import console.OperationCancelledException;
+import console.Terminal;
+import models.Inventory;
+import models.Product;
+import roles.Authentication;
+import roles.Cashier;
+import roles.IceCreamMaker;
+import roles.Manager;
+
 /**
  * SC Ice Cream Management System - entry point.
  * One shared Inventory is used by all roles, and each role object is created once,
@@ -6,6 +18,24 @@
 public class Main {
 
     public static void main(String[] args) {
+        boolean plain = false;
+        for (String arg : args) {
+            switch (arg) {
+                case "--plain":
+                    plain = true;
+                    break;
+                case "-h":
+                case "--help":
+                    printUsage(System.out);
+                    return;
+                default:
+                    System.err.println("Unknown option: " + arg);
+                    printUsage(System.err);
+                    System.exit(2);
+            }
+        }
+        Terminal.init(plain);
+
         Inventory inventory = new Inventory();
         loadSampleProducts(inventory);
 
@@ -14,7 +44,8 @@ public class Main {
         Manager manager = new Manager(inventory, iceCreamMaker);
 
         while (true) {
-            System.out.println("\n========================================");
+            Terminal.newScreen();
+            System.out.println("========================================");
             System.out.println("    SC ICE CREAM MANAGEMENT SYSTEM");
             System.out.println("========================================");
             System.out.println("[1] Cashier");
@@ -24,7 +55,9 @@ public class Main {
             int choice = InputHelper.readMenuChoice(3);
 
             if (choice == 0) {
-                break;
+                if (confirmExit(iceCreamMaker)) {
+                    break;
+                }
             } else if (choice == 1 && Authentication.login(Authentication.CASHIER)) {
                 cashier.showMenu();
             } else if (choice == 2 && Authentication.login(Authentication.ICE_CREAM_MAKER)) {
@@ -34,6 +67,31 @@ public class Main {
             }
         }
         System.out.println("Thank you for using the SC Ice Cream Management System. Goodbye!");
+    }
+
+    // Data is kept only while the program runs, so warn before unprocessed orders are lost.
+    private static boolean confirmExit(IceCreamMaker iceCreamMaker) {
+        int pending = iceCreamMaker.getPendingOrders().size();
+        if (pending == 0) {
+            return true;
+        }
+        System.out.println(pending + (pending == 1 ? " order is" : " orders are")
+                + " still pending and will be lost when the program closes.");
+        try {
+            return InputHelper.readYesNo("Exit anyway?", false);
+        } catch (OperationCancelledException e) {
+            return false;
+        }
+    }
+
+    private static void printUsage(PrintStream out) {
+        out.println("Usage: java -cp out Main [options]");
+        out.println();
+        out.println("Options:");
+        out.println("  --plain      plain scrolling output: no screen clearing and no pauses");
+        out.println("  -h, --help   show this help and exit");
+        out.println();
+        out.println("At any menu, q, quit or exit work the same as [0].");
     }
 
     // Starting products so every feature can be tried right away.

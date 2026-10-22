@@ -1,6 +1,12 @@
+package roles;
+
+import console.InputHelper;
+import console.Terminal;
+
 /**
  * Simple password check for each role (for a school demonstration, not real security).
- * The passwords are stored only here and are never printed.
+ * The passwords are stored only here and are never printed. Like sudo, only a few
+ * attempts are allowed.
  */
 public class Authentication {
     private static final String CASHIER_PASSWORD = "ICCashier123";
@@ -11,24 +17,33 @@ public class Authentication {
     public static final String CASHIER = "Cashier";
     public static final String ICE_CREAM_MAKER = "Ice Cream Maker";
 
+    public static final int MAX_ATTEMPTS = 3;
+
     /**
-     * Keeps asking for the role's password until it is correct or the user cancels with C.
-     * Returns true only when the correct password was entered.
+     * Asks for the role's password until it is correct, the user cancels with C, or
+     * MAX_ATTEMPTS wrong passwords were entered. Returns true only for the correct password.
      */
     public static boolean login(String roleName) {
         String correctPassword = getPassword(roleName);
-        while (true) {
-            String entered = InputHelper.readLine("Enter " + roleName + " password (or C to cancel): ");
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            String entered = InputHelper.readPassword("Enter " + roleName + " password (or C to cancel): ");
             if (entered.equalsIgnoreCase(InputHelper.CANCEL)) {
-                System.out.println("Login cancelled. Returning to Main Menu...");
+                Terminal.notice("Login cancelled. Returning to Main Menu...");
                 return false;
             }
             if (entered.equals(correctPassword)) {
-                System.out.println("Access granted. Welcome, " + roleName + "!");
+                Terminal.notice("Access granted. Welcome, " + roleName + "!");
                 return true;
             }
-            System.out.println("Incorrect password for " + roleName + ". Please try again.");
+            int attemptsLeft = MAX_ATTEMPTS - attempt;
+            if (attemptsLeft > 0) {
+                System.out.println("Incorrect password for " + roleName + ". " + attemptsLeft
+                        + (attemptsLeft == 1 ? " attempt" : " attempts") + " left.");
+            }
         }
+        Terminal.notice(MAX_ATTEMPTS + " incorrect password attempts for " + roleName
+                + ". Returning to Main Menu...");
+        return false;
     }
 
     private static String getPassword(String roleName) {

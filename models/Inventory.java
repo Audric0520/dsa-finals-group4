@@ -1,3 +1,5 @@
+package models;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -17,9 +19,14 @@ public class Inventory {
     private final ArrayList<Product> products = new ArrayList<>();
     private final HashMap<String, Product> productMap = new HashMap<>();
 
-    /** Fails if the ID already exists, the price is out of range or the quantity is not 1-100. */
+    /**
+     * Fails if the ID already exists, the same flavor, size and container is already stocked
+     * under another ID, the price is out of range or the quantity is not 1-100.
+     */
     public boolean addProduct(Product product) {
         if (productMap.containsKey(product.getProductId())
+                || findSameProduct(product.getFlavor(), product.getServingSize(), product.getContainerType(),
+                        null) != null
                 || !Product.isValidPrice(product.getPrice())
                 || product.getQuantity() < MIN_NEW_QUANTITY || product.getQuantity() > MAX_STOCK) {
             return false;
@@ -35,6 +42,23 @@ public class Inventory {
 
     public boolean containsId(String productId) {
         return productMap.containsKey(productId);
+    }
+
+    /**
+     * Returns the product with this flavor (ignoring upper/lower case), serving size and container,
+     * or null if there is none. The product with ID ignoreId is skipped, so a product being
+     * updated is not reported as a copy of itself (pass null to check every product).
+     * Two IDs for the same item would split its stock, so the Manager is never allowed to create one.
+     */
+    public Product findSameProduct(String flavor, char servingSize, String containerType, String ignoreId) {
+        for (Product product : products) {
+            if (!product.getProductId().equals(ignoreId) && product.getFlavor().equalsIgnoreCase(flavor)
+                    && product.getServingSize() == servingSize
+                    && product.getContainerType().equalsIgnoreCase(containerType)) {
+                return product;
+            }
+        }
+        return null;
     }
 
     /** Returns the removed product, or null if the ID does not exist. */
@@ -89,6 +113,21 @@ public class Inventory {
 
     public boolean isEmpty() {
         return products.isEmpty();
+    }
+
+    public int size() {
+        return products.size();
+    }
+
+    /** Number of products with 0 in stock (shown to the Manager as products to restock). */
+    public int countOutOfStock() {
+        int count = 0;
+        for (Product product : products) {
+            if (product.getQuantity() == 0) {
+                count++;
+            }
+        }
+        return count;
     }
 
     /** Prints a title and the products as a table. Used by view, search and sort. */

@@ -1,4 +1,8 @@
+package algorithms;
+
 import java.util.ArrayList;
+
+import models.Product;
 
 /**
  * Hand-written searching algorithms.
