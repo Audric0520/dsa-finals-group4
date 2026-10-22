@@ -25,8 +25,10 @@ public class Authentication {
      */
     public static boolean login(String roleName) {
         String correctPassword = getPassword(roleName);
+        System.out.println();
+        System.out.println("--- " + roleName + " Login (enter C to cancel) ---");
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            String entered = InputHelper.readPassword("Enter " + roleName + " password (or C to cancel): ");
+            String entered = InputHelper.readPassword(roleName + " password: ");
             if (entered.equalsIgnoreCase(InputHelper.CANCEL)) {
                 Terminal.notice("Login cancelled. Returning to Main Menu...");
                 return false;

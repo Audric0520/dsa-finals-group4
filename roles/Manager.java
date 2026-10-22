@@ -82,7 +82,7 @@ public class Manager extends User {
     private void addProduct() {
         System.out.println();
         System.out.println("--- Add Product (enter C at any prompt to cancel) ---");
-        String id = InputHelper.readProductId("Enter product ID, e.g. IC006 (or C to cancel): ");
+        String id = InputHelper.readProductId("Enter product ID, e.g. IC006: ");
         if (inventory.containsId(id)) {
             System.out.println("A product with ID " + id + " already exists. Product not added.");
             return;
@@ -114,7 +114,7 @@ public class Manager extends User {
             System.out.println("The inventory is empty.");
             return null;
         }
-        String id = InputHelper.readProductId("Enter product ID (or C to cancel): ");
+        String id = InputHelper.readProductId("Enter product ID: ");
         Product product = inventory.findById(id);
         if (product == null) {
             System.out.println("No product found with ID " + id + ".");
@@ -132,46 +132,54 @@ public class Manager extends User {
      */
     private void updateProduct() {
         System.out.println();
-        System.out.println("--- Update Product Details ---");
+        System.out.println("--- Update Product Details (enter C at any prompt to cancel) ---");
         Product product = askForExistingProduct();
         if (product == null) {
             return;
         }
-        System.out.println("Current: " + product);
-        System.out.println("[1] Flavor");
-        System.out.println("[2] Serving size");
-        System.out.println("[3] Quantity in stock");
-        System.out.println("[4] Price");
-        System.out.println("[5] Container type");
-        int field = InputHelper.readInt("Field to update [1-5] (or C to cancel): ", 1, 5);
         String id = product.getProductId();
         String pendingOrders = iceCreamMaker.getPendingOrderIdsFor(id);
+        boolean locked = !pendingOrders.isEmpty();
 
-        if ((field == 1 || field == 2 || field == 5) && !pendingOrders.isEmpty()) {
-            String fieldName = field == 1 ? "flavor" : field == 2 ? "serving size" : "container type";
-            System.out.println("Cannot change the " + fieldName + " of " + id + ": it is part of "
-                    + describeOrders(pendingOrders) + ". Process " + itOrThem(pendingOrders)
-                    + " first, so the customer gets what they ordered.");
-            return;
+        // Say straight away what cannot change, before the Manager picks a field
+        System.out.println("Current: " + product);
+        if (locked) {
+            System.out.println(id + " is part of " + describeOrders(pendingOrders) + ", so its flavor, serving size and"
+                    + " container type cannot change until " + (isPlural(pendingOrders) ? "they are" : "it is")
+                    + " processed (the customer gets what they ordered).");
+            System.out.println("Its quantity and price can still be updated.");
+        }
+        String lockedMark = locked ? " (locked)" : "";
+        System.out.println("[1] Flavor" + lockedMark);
+        System.out.println("[2] Serving size" + lockedMark);
+        System.out.println("[3] Quantity in stock");
+        System.out.println("[4] Price");
+        System.out.println("[5] Container type" + lockedMark);
+        int field = InputHelper.readInt("Field to update [1-5]: ", 1, 5);
+        while (locked && field != 3 && field != 4) {
+            String fieldName = field == 1 ? "Flavor" : field == 2 ? "Serving size" : "Container type";
+            System.out.println(fieldName + " is locked while " + describeOrders(pendingOrders)
+                    + (isPlural(pendingOrders) ? " wait" : " waits") + ". Choose 3 (quantity) or 4 (price).");
+            field = InputHelper.readInt("Field to update [1-5]: ", 1, 5);
         }
 
         switch (field) {
             case 1:
-                String flavor = InputHelper.readFlavor("New flavor (or C to cancel): ");
+                String flavor = InputHelper.readFlavor("New flavor: ");
                 if (isDuplicate(product, flavor, product.getServingSize(), product.getContainerType())) {
                     return;
                 }
                 product.setFlavor(flavor);
                 break;
             case 2:
-                char size = InputHelper.readServingSize("New serving size S/M/L (or C to cancel): ");
+                char size = InputHelper.readServingSize("New serving size (S/M/L): ");
                 if (isDuplicate(product, product.getFlavor(), size, product.getContainerType())) {
                     return;
                 }
                 product.setServingSize(size);
                 break;
             case 3:
-                int quantity = InputHelper.readInt("New quantity 0-" + Inventory.MAX_STOCK + " (or C to cancel): ", 0,
+                int quantity = InputHelper.readInt("New quantity (0-" + Inventory.MAX_STOCK + "): ", 0,
                         Inventory.MAX_STOCK);
                 if (!confirmStockBelowReserved(product, quantity, pendingOrders)) {
                     return;
@@ -180,10 +188,10 @@ public class Manager extends User {
                 break;
             case 4:
                 inventory.updatePrice(id, InputHelper.readPrice(String.format(
-                        "New price P%.2f-P%.2f (or C to cancel): P", Product.MIN_PRICE, Product.MAX_PRICE)));
+                        "New price (P%.2f-P%.2f): P", Product.MIN_PRICE, Product.MAX_PRICE)));
                 break;
             default:
-                String container = InputHelper.readContainerType("New container cone/cup (or C to cancel): ");
+                String container = InputHelper.readContainerType("New container type (cone/cup): ");
                 if (isDuplicate(product, product.getFlavor(), product.getServingSize(), container)) {
                     return;
                 }
@@ -241,7 +249,7 @@ public class Manager extends User {
 
     private void removeProduct() {
         System.out.println();
-        System.out.println("--- Remove Product ---");
+        System.out.println("--- Remove Product (enter C at any prompt to cancel) ---");
         Product product = askForExistingProduct();
         if (product == null) {
             return;
@@ -253,7 +261,7 @@ public class Manager extends User {
             return;
         }
         System.out.println("Product: " + product);
-        // Removing cannot be undone, so pressing Enter alone answers No
+        // Removing cannot be undone, so pressing Enter alone answers No (C still cancels)
         if (InputHelper.readYesNo("Remove this product?", false)) {
             inventory.removeProduct(product.getProductId());
             System.out.println("Product " + product.getProductId() + " removed.");
