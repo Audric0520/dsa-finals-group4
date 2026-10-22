@@ -6,9 +6,14 @@
 [2] Ice Cream Maker
 [3] Manager
 [0] Exit
-Choice: Invalid choice. Please enter a number from 0 to 3.
-Choice: Enter Manager password (or C to cancel): Incorrect password for Manager. Please try again.
-Enter Manager password (or C to cancel): Access granted. Welcome, Manager!
+Choice [0-3]: 
+Choice [0-3]: 9
+Invalid choice "9". Please enter a number from 0 to 3.
+Choice [0-3]: 3
+Enter Manager password (hidden, or C to cancel): 
+Incorrect password for Manager. 2 attempts left.
+Enter Manager password (hidden, or C to cancel): 
+Access granted. Welcome, Manager!
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -18,8 +23,12 @@ Enter Manager password (or C to cancel): Access granted. Welcome, Manager!
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: Invalid choice. Please enter a number from 0 to 6.
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 7
+Invalid choice "7". Please enter a number from 0 to 6.
+Choice [0-6]: 1
+
 === PRODUCT INVENTORY (by product ID) ===
 ------------------------------------------------------------
 ID     | Flavor             | Size | Type | Stock |    Price
@@ -39,15 +48,20 @@ IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 2
+
 Sort products by:
 [1] Quantity
 [2] Price
-Choice (or C to cancel): 
+Choice [1-2] (or C to cancel): 2
+
 Sort order:
 [1] Ascending (lowest to highest)
 [2] Descending (highest to lowest)
-Choice (or C to cancel): 
+Choice [1-2] (or C to cancel): 1
+
 Sorting complete: products sorted by price (lowest to highest) using Insertion Sort.
 
 === SORTED PRODUCTS (price, lowest to highest) ===
@@ -69,11 +83,16 @@ IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 3
+
 Search by:
 [1] Product ID (Binary Search)
 [2] Flavor keyword (Linear Search)
-Choice (or C to cancel): Enter product ID (or C to cancel): 
+Choice [1-2] (or C to cancel): 1
+Enter product ID (or C to cancel): IC004
+
 === SEARCH RESULT (product ID IC004) ===
 ------------------------------------------------------------
 ID     | Flavor             | Size | Type | Stock |    Price
@@ -89,11 +108,16 @@ IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 3
+
 Search by:
 [1] Product ID (Binary Search)
 [2] Flavor keyword (Linear Search)
-Choice (or C to cancel): Enter product ID (or C to cancel): No product found with ID IC999.
+Choice [1-2] (or C to cancel): 1
+Enter product ID (or C to cancel): IC999
+No product found with ID IC999.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -103,11 +127,16 @@ Choice (or C to cancel): Enter product ID (or C to cancel): No product found wit
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 3
+
 Search by:
 [1] Product ID (Binary Search)
 [2] Flavor keyword (Linear Search)
-Choice (or C to cancel): Enter flavor keyword (or C to cancel): 
+Choice [1-2] (or C to cancel): 2
+Enter flavor keyword (or C to cancel): co
+
 === SEARCH RESULTS (flavor contains "co") - 2 found ===
 ------------------------------------------------------------
 ID     | Flavor             | Size | Type | Stock |    Price
@@ -124,9 +153,13 @@ IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 4
+
 --- Add Product (enter C at any prompt to cancel) ---
-Enter product ID, e.g. IC006 (or C to cancel): A product with ID IC003 already exists. Product not added.
+Enter product ID, e.g. IC006 (or C to cancel): IC003
+A product with ID IC003 already exists. Product not added.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -136,13 +169,26 @@ Enter product ID, e.g. IC006 (or C to cancel): A product with ID IC003 already e
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 5 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 4
+
 --- Add Product (enter C at any prompt to cancel) ---
-Enter product ID, e.g. IC006 (or C to cancel): Flavor: Serving size (S/M/L): Quantity in stock (1-100): Please enter a whole number from 1 to 100.
-Quantity in stock (1-100): Please enter a whole number from 1 to 100.
-Quantity in stock (1-100): Price (P30.00-P120.00): PInvalid price. Price must be from P30.00 to P120.00.
-Price (P30.00-P120.00): PInvalid price. Price must be from P30.00 to P120.00.
-Price (P30.00-P120.00): PContainer type (cone/cup): Product IC006 added successfully.
+Enter product ID, e.g. IC006 (or C to cancel): IC006
+Flavor: Ube
+Serving size (S/M/L): L
+Quantity in stock (1-100): 0
+Please enter a whole number from 1 to 100.
+Quantity in stock (1-100): 101
+Please enter a whole number from 1 to 100.
+Quantity in stock (1-100): 20
+Price (P30.00-P120.00): P25
+Invalid price. Price must be from P30.00 to P120.00.
+Price (P30.00-P120.00): P130
+Invalid price. Price must be from P30.00 to P120.00.
+Price (P30.00-P120.00): P30
+Container type (cone/cup): cone
+Product IC006 added successfully.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -152,9 +198,18 @@ Price (P30.00-P120.00): PContainer type (cone/cup): Product IC006 added successf
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 6 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 4
+
 --- Add Product (enter C at any prompt to cancel) ---
-Enter product ID, e.g. IC006 (or C to cancel): Flavor: Serving size (S/M/L): Quantity in stock (1-100): Price (P30.00-P120.00): PContainer type (cone/cup): Product IC007 added successfully.
+Enter product ID, e.g. IC006 (or C to cancel): IC007
+Flavor: Mocha
+Serving size (S/M/L): M
+Quantity in stock (1-100): 10
+Price (P30.00-P120.00): P120
+Container type (cone/cup): cup
+Product IC007 added successfully.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -164,9 +219,15 @@ Enter product ID, e.g. IC006 (or C to cancel): Flavor: Serving size (S/M/L): Qua
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 7 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 4
+
 --- Add Product (enter C at any prompt to cancel) ---
-Enter product ID, e.g. IC006 (or C to cancel): Flavor: Serving size (S/M/L): Operation cancelled. Returning to Manager Menu...
+Enter product ID, e.g. IC006 (or C to cancel): IC008
+Flavor: Pistachio
+Serving size (S/M/L): C
+Operation cancelled. Returning to Manager Menu...
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -176,16 +237,23 @@ Enter product ID, e.g. IC006 (or C to cancel): Flavor: Serving size (S/M/L): Ope
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 7 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 5
+
 --- Update Product Details ---
-Enter product ID (or C to cancel): Current: IC006  | Ube                | L    | Cone |    20 |   P30.00
+Enter product ID (or C to cancel): IC006
+Current: IC006  | Ube                | L    | Cone |    20 |   P30.00
 [1] Flavor
 [2] Serving size
 [3] Quantity in stock
 [4] Price
 [5] Container type
-Field to update (or C to cancel): New price P30.00-P120.00 (or C to cancel): PInvalid price. Price must be from P30.00 to P120.00.
-New price P30.00-P120.00 (or C to cancel): PProduct updated: IC006  | Ube                | L    | Cone |    20 |   P99.50
+Field to update [1-5] (or C to cancel): 4
+New price P30.00-P120.00 (or C to cancel): P121
+Invalid price. Price must be from P30.00 to P120.00.
+New price P30.00-P120.00 (or C to cancel): P99.5
+Product updated: IC006  | Ube                | L    | Cone |    20 |   P99.50
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -195,9 +263,13 @@ New price P30.00-P120.00 (or C to cancel): PProduct updated: IC006  | Ube       
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 7 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 5
+
 --- Update Product Details ---
-Enter product ID (or C to cancel): No product found with ID IC999.
+Enter product ID (or C to cancel): IC999
+No product found with ID IC999.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -207,15 +279,21 @@ Enter product ID (or C to cancel): No product found with ID IC999.
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 7 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 5
+
 --- Update Product Details ---
-Enter product ID (or C to cancel): Current: IC001  | Vanilla            | S    | Cone |    50 |   P45.00
+Enter product ID (or C to cancel): IC001
+Current: IC001  | Vanilla            | S    | Cone |    50 |   P45.00
 [1] Flavor
 [2] Serving size
 [3] Quantity in stock
 [4] Price
 [5] Container type
-Field to update (or C to cancel): New price P30.00-P120.00 (or C to cancel): POperation cancelled. Returning to Manager Menu...
+Field to update [1-5] (or C to cancel): 4
+New price P30.00-P120.00 (or C to cancel): PC
+Operation cancelled. Returning to Manager Menu...
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -225,10 +303,15 @@ Field to update (or C to cancel): New price P30.00-P120.00 (or C to cancel): POp
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 7 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 6
+
 --- Remove Product ---
-Enter product ID (or C to cancel): Product: IC007  | Mocha              | M    | Cup  |    10 |  P120.00
-Remove this product? (Y/N, or C to cancel): Product was not removed.
+Enter product ID (or C to cancel): IC007
+Product: IC007  | Mocha              | M    | Cup  |    10 |  P120.00
+Remove this product? [y/N] (or C to cancel): 
+Product was not removed.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -238,10 +321,15 @@ Remove this product? (Y/N, or C to cancel): Product was not removed.
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 7 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 6
+
 --- Remove Product ---
-Enter product ID (or C to cancel): Product: IC007  | Mocha              | M    | Cup  |    10 |  P120.00
-Remove this product? (Y/N, or C to cancel): Product IC007 removed.
+Enter product ID (or C to cancel): IC007
+Product: IC007  | Mocha              | M    | Cup  |    10 |  P120.00
+Remove this product? [y/N] (or C to cancel): Y
+Product IC007 removed.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -251,9 +339,13 @@ Remove this product? (Y/N, or C to cancel): Product IC007 removed.
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 6 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 6
+
 --- Remove Product ---
-Enter product ID (or C to cancel): Operation cancelled. Returning to Manager Menu...
+Enter product ID (or C to cancel): C
+Operation cancelled. Returning to Manager Menu...
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -263,7 +355,10 @@ Enter product ID (or C to cancel): Operation cancelled. Returning to Manager Men
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: Manager logged out.
+
+Products: 6 | Out of stock: 0 | Pending orders: 0
+Choice [0-6]: 0
+Manager logged out.
 
 ========================================
     SC ICE CREAM MANAGEMENT SYSTEM
@@ -272,7 +367,13 @@ Choice: Manager logged out.
 [2] Ice Cream Maker
 [3] Manager
 [0] Exit
-Choice: Enter Cashier password (or C to cancel): Login cancelled. Returning to Main Menu...
+Choice [0-3]: 1
+Enter Cashier password (hidden, or C to cancel): 
+Incorrect password for Cashier. 2 attempts left.
+Enter Cashier password (hidden, or C to cancel): 
+Incorrect password for Cashier. 1 attempt left.
+Enter Cashier password (hidden, or C to cancel): 
+3 incorrect password attempts for Cashier. Returning to Main Menu...
 
 ========================================
     SC ICE CREAM MANAGEMENT SYSTEM
@@ -281,7 +382,20 @@ Choice: Enter Cashier password (or C to cancel): Login cancelled. Returning to M
 [2] Ice Cream Maker
 [3] Manager
 [0] Exit
-Choice: Enter Cashier password (or C to cancel): Access granted. Welcome, Cashier!
+Choice [0-3]: 1
+Enter Cashier password (hidden, or C to cancel): 
+Login cancelled. Returning to Main Menu...
+
+========================================
+    SC ICE CREAM MANAGEMENT SYSTEM
+========================================
+[1] Cashier
+[2] Ice Cream Maker
+[3] Manager
+[0] Exit
+Choice [0-3]: 1
+Enter Cashier password (hidden, or C to cancel): 
+Access granted. Welcome, Cashier!
 
 ========== CASHIER MENU ==========
 [1] View inventory
@@ -290,15 +404,20 @@ Choice: Enter Cashier password (or C to cancel): Access granted. Welcome, Cashie
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 0
+Choice [0-5]: 3
+
 Sort products by:
 [1] Quantity
 [2] Price
-Choice (or C to cancel): 
+Choice [1-2] (or C to cancel): 1
+
 Sort order:
 [1] Ascending (lowest to highest)
 [2] Descending (highest to lowest)
-Choice (or C to cancel): 
+Choice [1-2] (or C to cancel): 2
+
 Sorting complete: products sorted by quantity (highest to lowest) using Insertion Sort.
 
 === SORTED PRODUCTS (quantity, highest to lowest) ===
@@ -320,7 +439,10 @@ IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 0
+Choice [0-5]: 5
+
 --- Pending Orders (first = next to process) ---
 No pending orders.
 
@@ -331,34 +453,52 @@ No pending orders.
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 0
+Choice [0-5]: 4
+
 --- New Customer Order ---
 How to enter an order:
   - Type a product ID (e.g. IC001) to add that product to the order.
+    To skip the quantity question, type the quantity after it (e.g. IC001 2).
   - Type D when the order is complete to send it to the queue.
   - Type U to remove the last product you added.
   - Type C to cancel the whole order.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): The order is still empty. Add at least one product, or type C to cancel.
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
+The order is still empty. Add at least one product, or type C to cancel.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): "ABC" is not valid. Type a product ID like IC001, or D, U or C.
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): abc
+"ABC" is not valid. Type a product ID like IC001 (or IC001 2), or D, U or C.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): No product found with ID IC999.
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC999
+No product found with ID IC999.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How many Vanilla (IC001)? Enter 1-50 (or C to cancel the order): Please enter a whole number from 1 to 50.
-How many Vanilla (IC001)? Enter 1-50 (or C to cancel the order): Added to order: 2x IC001 Vanilla (S, Cone) = P90.00
-Items in this order: 1
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001
+How many Vanilla (IC001)? Enter 1-50 (or C to cancel the order): 0
+Please enter a whole number from 1 to 50.
+How many Vanilla (IC001)? Enter 1-50 (or C to cancel the order): 2
+Added to order: 2x IC001 Vanilla (S, Cone) = P90.00
+Items in this order: 1 | Running total: P90.00
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How many Chocolate (IC003)? Enter 1-40 (or C to cancel the order): Added to order: 1x IC003 Chocolate (M, Cup) = P65.00
-Items in this order: 2
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC003
+How many Chocolate (IC003)? Enter 1-40 (or C to cancel the order): 1
+Added to order: 1x IC003 Chocolate (M, Cup) = P65.00
+Items in this order: 2 | Running total: P155.00
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Removed from order: 1x IC003 Chocolate (M, Cup) = P65.00
-Items in this order: 1
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): U
+Removed from order: 1x IC003 Chocolate (M, Cup) = P65.00
+Items in this order: 1 | Running total: P90.00
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How many Mango (IC002)? Enter 1-25 (or C to cancel the order): Added to order: 3x IC002 Mango (M, Cone) = P180.00
-Items in this order: 2
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC002 30
+Quantity for Mango (IC002) must be a whole number from 1 to 25. Nothing was added.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Order added to the queue: ORD-001 | Total: P270.00
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC002 3
+Added to order: 3x IC002 Mango (M, Cone) = P180.00
+Items in this order: 2 | Running total: P270.00
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
+Order added to the queue: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
 Orders waiting: 1
@@ -370,21 +510,30 @@ Orders waiting: 1
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 1
+Choice [0-5]: 4
+
 --- New Customer Order ---
 How to enter an order:
   - Type a product ID (e.g. IC001) to add that product to the order.
+    To skip the quantity question, type the quantity after it (e.g. IC001 2).
   - Type D when the order is complete to send it to the queue.
   - Type U to remove the last product you added.
   - Type C to cancel the whole order.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How many Strawberry (IC005)? Enter 1-15 (or C to cancel the order): Please enter a whole number from 1 to 15.
-How many Strawberry (IC005)? Enter 1-15 (or C to cancel the order): Added to order: 15x IC005 Strawberry (L, Cup) = P1275.00
-Items in this order: 1
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC005
+How many Strawberry (IC005)? Enter 1-15 (or C to cancel the order): 16
+Please enter a whole number from 1 to 15.
+How many Strawberry (IC005)? Enter 1-15 (or C to cancel the order): 15
+Added to order: 15x IC005 Strawberry (L, Cup) = P1275.00
+Items in this order: 1 | Running total: P1275.00
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Strawberry (IC005) has no more stock available (in stock: 15, in pending orders: 0, already in this order: 15).
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC005
+Strawberry (IC005) has no more stock available (in stock: 15, in pending orders: 0, already in this order: 15).
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Order added to the queue: ORD-002 | Total: P1275.00
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
+Order added to the queue: ORD-002 | Total: P1275.00
     - 15x IC005 Strawberry (L, Cup) = P1275.00
 Orders waiting: 2
 
@@ -395,18 +544,25 @@ Orders waiting: 2
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 2
+Choice [0-5]: 4
+
 --- New Customer Order ---
 How to enter an order:
   - Type a product ID (e.g. IC001) to add that product to the order.
+    To skip the quantity question, type the quantity after it (e.g. IC001 2).
   - Type D when the order is complete to send it to the queue.
   - Type U to remove the last product you added.
   - Type C to cancel the whole order.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How many Cookies and Cream (IC004)? Enter 1-30 (or C to cancel the order): Added to order: 2x IC004 Cookies and Cream (L, Cup) = P180.00
-Items in this order: 1
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC004
+How many Cookies and Cream (IC004)? Enter 1-30 (or C to cancel the order): 2
+Added to order: 2x IC004 Cookies and Cream (L, Cup) = P180.00
+Items in this order: 1 | Running total: P180.00
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Order added to the queue: ORD-003 | Total: P180.00
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
+Order added to the queue: ORD-003 | Total: P180.00
     - 2x IC004 Cookies and Cream (L, Cup) = P180.00
 Orders waiting: 3
 
@@ -417,18 +573,25 @@ Orders waiting: 3
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 3
+Choice [0-5]: 4
+
 --- New Customer Order ---
 How to enter an order:
   - Type a product ID (e.g. IC001) to add that product to the order.
+    To skip the quantity question, type the quantity after it (e.g. IC001 2).
   - Type D when the order is complete to send it to the queue.
   - Type U to remove the last product you added.
   - Type C to cancel the whole order.
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): How many Ube (IC006)? Enter 1-20 (or C to cancel the order): Added to order: 1x IC006 Ube (L, Cone) = P99.50
-Items in this order: 1
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC006
+How many Ube (IC006)? Enter 1-20 (or C to cancel the order): 1
+Added to order: 1x IC006 Ube (L, Cone) = P99.50
+Items in this order: 1 | Running total: P99.50
 
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Operation cancelled. Returning to Cashier Menu...
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): C
+Operation cancelled. Returning to Cashier Menu...
 
 ========== CASHIER MENU ==========
 [1] View inventory
@@ -437,7 +600,10 @@ Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): Operat
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 3
+Choice [0-5]: 5
+
 --- Pending Orders (first = next to process) ---
 1. ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
@@ -454,7 +620,10 @@ Choice:
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: 
+
+Products: 6 | Pending orders: 3
+Choice [0-5]: 1
+
 === PRODUCT INVENTORY (by product ID) ===
 ------------------------------------------------------------
 ID     | Flavor             | Size | Type | Stock |    Price
@@ -474,7 +643,10 @@ IC006  | Ube                | L    | Cone |    20 |   P99.50
 [4] Add new order to queue
 [5] View pending orders
 [0] Log out
-Choice: Cashier logged out.
+
+Products: 6 | Pending orders: 3
+Choice [0-5]: exit
+Cashier logged out.
 
 ========================================
     SC ICE CREAM MANAGEMENT SYSTEM
@@ -483,7 +655,9 @@ Choice: Cashier logged out.
 [2] Ice Cream Maker
 [3] Manager
 [0] Exit
-Choice: Enter Manager password (or C to cancel): Access granted. Welcome, Manager!
+Choice [0-3]: 3
+Enter Manager password (hidden, or C to cancel): 
+Access granted. Welcome, Manager!
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -493,9 +667,13 @@ Choice: Enter Manager password (or C to cancel): Access granted. Welcome, Manage
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: 
+
+Products: 6 | Out of stock: 0 | Pending orders: 3
+Choice [0-6]: 6
+
 --- Remove Product ---
-Enter product ID (or C to cancel): Cannot remove IC005: it is part of a pending order. Process that order first.
+Enter product ID (or C to cancel): IC005
+Cannot remove IC005: it is part of a pending order. Process that order first.
 
 ========== MANAGER MENU ==========
 [1] View inventory
@@ -505,7 +683,10 @@ Enter product ID (or C to cancel): Cannot remove IC005: it is part of a pending 
 [5] Update product details
 [6] Remove product
 [0] Log out
-Choice: Manager logged out.
+
+Products: 6 | Out of stock: 0 | Pending orders: 3
+Choice [0-6]: 0
+Manager logged out.
 
 ========================================
     SC ICE CREAM MANAGEMENT SYSTEM
@@ -514,8 +695,11 @@ Choice: Manager logged out.
 [2] Ice Cream Maker
 [3] Manager
 [0] Exit
-Choice: Enter Ice Cream Maker password (or C to cancel): Incorrect password for Ice Cream Maker. Please try again.
-Enter Ice Cream Maker password (or C to cancel): Access granted. Welcome, Ice Cream Maker!
+Choice [0-3]: 2
+Enter Ice Cream Maker password (hidden, or C to cancel): 
+Incorrect password for Ice Cream Maker. 2 attempts left.
+Enter Ice Cream Maker password (hidden, or C to cancel): 
+Access granted. Welcome, Ice Cream Maker!
 
 ========== ICE CREAM MAKER MENU ==========
 [1] View inventory
@@ -524,16 +708,22 @@ Enter Ice Cream Maker password (or C to cancel): Access granted. Welcome, Ice Cr
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: Invalid choice. Please enter a number from 0 to 5.
-Choice: 
+
+Pending orders: 3 | Next: ORD-001
+Choice [0-5]: 6
+Invalid choice "6". Please enter a number from 0 to 5.
+Choice [0-5]: 3
+
 Sort products by:
 [1] Quantity
 [2] Price
-Choice (or C to cancel): 
+Choice [1-2] (or C to cancel): 2
+
 Sort order:
 [1] Ascending (lowest to highest)
 [2] Descending (highest to lowest)
-Choice (or C to cancel): 
+Choice [1-2] (or C to cancel): 2
+
 Sorting complete: products sorted by price (highest to lowest) using Insertion Sort.
 
 === SORTED PRODUCTS (price, highest to lowest) ===
@@ -555,7 +745,10 @@ IC001  | Vanilla            | S    | Cone |    50 |   P45.00
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 3 | Next: ORD-001
+Choice [0-5]: 4
+
 --- Pending Orders (first = next to process) ---
 1. ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
@@ -572,11 +765,15 @@ Choice:
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 3 | Next: ORD-001
+Choice [0-5]: 5
+
 Next order: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
-Process this order? (Y/N, or C to cancel): Order ORD-001 was left in the queue.
+Process this order? [Y/n] (or C to cancel): N
+Order ORD-001 was left in the queue.
 
 ========== ICE CREAM MAKER MENU ==========
 [1] View inventory
@@ -585,11 +782,15 @@ Process this order? (Y/N, or C to cancel): Order ORD-001 was left in the queue.
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 3 | Next: ORD-001
+Choice [0-5]: 5
+
 Next order: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
-Process this order? (Y/N, or C to cancel): Order ORD-001 processed successfully. Inventory updated:
+Process this order? [Y/n] (or C to cancel): Y
+Order ORD-001 processed successfully. Inventory updated:
     - IC001 Vanilla: -2, stock now 48
     - IC002 Mango: -3, stock now 22
 Orders still waiting: 2
@@ -601,10 +802,14 @@ Orders still waiting: 2
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 2 | Next: ORD-002
+Choice [0-5]: 5
+
 Next order: ORD-002 | Total: P1275.00
     - 15x IC005 Strawberry (L, Cup) = P1275.00
-Process this order? (Y/N, or C to cancel): Operation cancelled. Returning to Ice Cream Maker Menu...
+Process this order? [Y/n] (or C to cancel): C
+Operation cancelled. Returning to Ice Cream Maker Menu...
 
 ========== ICE CREAM MAKER MENU ==========
 [1] View inventory
@@ -613,10 +818,14 @@ Process this order? (Y/N, or C to cancel): Operation cancelled. Returning to Ice
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 2 | Next: ORD-002
+Choice [0-5]: 5
+
 Next order: ORD-002 | Total: P1275.00
     - 15x IC005 Strawberry (L, Cup) = P1275.00
-Process this order? (Y/N, or C to cancel): Order ORD-002 processed successfully. Inventory updated:
+Process this order? [Y/n] (or C to cancel): 
+Order ORD-002 processed successfully. Inventory updated:
     - IC005 Strawberry: -15, stock now 0
 Orders still waiting: 1
 
@@ -627,10 +836,14 @@ Orders still waiting: 1
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 1 | Next: ORD-003
+Choice [0-5]: 5
+
 Next order: ORD-003 | Total: P180.00
     - 2x IC004 Cookies and Cream (L, Cup) = P180.00
-Process this order? (Y/N, or C to cancel): Order ORD-003 processed successfully. Inventory updated:
+Process this order? [Y/n] (or C to cancel): Y
+Order ORD-003 processed successfully. Inventory updated:
     - IC004 Cookies and Cream: -2, stock now 28
 Orders still waiting: 0
 
@@ -641,7 +854,10 @@ Orders still waiting: 0
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: No pending orders to process.
+
+Pending orders: 0 | Next: none
+Choice [0-5]: 5
+No pending orders to process.
 
 ========== ICE CREAM MAKER MENU ==========
 [1] View inventory
@@ -650,7 +866,10 @@ Choice: No pending orders to process.
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: 
+
+Pending orders: 0 | Next: none
+Choice [0-5]: 1
+
 === PRODUCT INVENTORY (by product ID) ===
 ------------------------------------------------------------
 ID     | Flavor             | Size | Type | Stock |    Price
@@ -670,7 +889,10 @@ IC006  | Ube                | L    | Cone |    20 |   P99.50
 [4] View pending orders
 [5] Process next order
 [0] Log out
-Choice: Ice Cream Maker logged out.
+
+Pending orders: 0 | Next: none
+Choice [0-5]: 0
+Ice Cream Maker logged out.
 
 ========================================
     SC ICE CREAM MANAGEMENT SYSTEM
@@ -679,4 +901,69 @@ Choice: Ice Cream Maker logged out.
 [2] Ice Cream Maker
 [3] Manager
 [0] Exit
-Choice: Thank you for using the SC Ice Cream Management System. Goodbye!
+Choice [0-3]: 1
+Enter Cashier password (hidden, or C to cancel): 
+Access granted. Welcome, Cashier!
+
+========== CASHIER MENU ==========
+[1] View inventory
+[2] Search products
+[3] Sort products
+[4] Add new order to queue
+[5] View pending orders
+[0] Log out
+
+Products: 6 | Pending orders: 0
+Choice [0-5]: 4
+
+--- New Customer Order ---
+How to enter an order:
+  - Type a product ID (e.g. IC001) to add that product to the order.
+    To skip the quantity question, type the quantity after it (e.g. IC001 2).
+  - Type D when the order is complete to send it to the queue.
+  - Type U to remove the last product you added.
+  - Type C to cancel the whole order.
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001 1
+Added to order: 1x IC001 Vanilla (S, Cone) = P45.00
+Items in this order: 1 | Running total: P45.00
+
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
+Order added to the queue: ORD-004 | Total: P45.00
+    - 1x IC001 Vanilla (S, Cone) = P45.00
+Orders waiting: 1
+
+========== CASHIER MENU ==========
+[1] View inventory
+[2] Search products
+[3] Sort products
+[4] Add new order to queue
+[5] View pending orders
+[0] Log out
+
+Products: 6 | Pending orders: 1
+Choice [0-5]: 0
+Cashier logged out.
+
+========================================
+    SC ICE CREAM MANAGEMENT SYSTEM
+========================================
+[1] Cashier
+[2] Ice Cream Maker
+[3] Manager
+[0] Exit
+Choice [0-3]: 0
+1 order is still pending and will be lost when the program closes.
+Exit anyway? [y/N] (or C to cancel): 
+
+========================================
+    SC ICE CREAM MANAGEMENT SYSTEM
+========================================
+[1] Cashier
+[2] Ice Cream Maker
+[3] Manager
+[0] Exit
+Choice [0-3]: q
+1 order is still pending and will be lost when the program closes.
+Exit anyway? [y/N] (or C to cancel): y
+Thank you for using the SC Ice Cream Management System. Goodbye!

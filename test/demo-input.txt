@@ -1,3 +1,4 @@
+
 9
 3
 wrongpass
@@ -53,13 +54,17 @@ IC001
 C
 6
 IC007
-N
+
 6
 IC007
 Y
 6
 C
 0
+1
+nope1
+nope2
+nope3
 1
 C
 1
@@ -78,8 +83,8 @@ IC001
 IC003
 1
 U
-IC002
-3
+IC002 30
+IC002 3
 D
 4
 IC005
@@ -97,7 +102,7 @@ IC006
 C
 5
 1
-0
+exit
 3
 ICManager123
 6
@@ -118,10 +123,19 @@ Y
 5
 C
 5
-Y
+
 5
 Y
 5
 1
 0
+1
+ICCashier123
+4
+IC001 1
+D
 0
+0
+
+q
+y

@@ -21,6 +21,7 @@ public class AlgorithmTest {
         testPendingOrderList();
         testProcessingRechecksStock();
         testStack();
+        testInputAndTerminal();
 
         System.out.println("\n" + passed + " passed, " + failed + " failed.");
         if (failed > 0) {
@@ -299,5 +300,27 @@ public class AlgorithmTest {
         check("ArrayDeque pop() undoes the most recent item (LIFO)",
                 cart.pop().getProduct().getProductId().equals("IC002"));
         check("Remaining item is the first one added", cart.peek().getProduct().getProductId().equals("IC001"));
+    }
+
+    private static void testInputAndTerminal() {
+        // Used by menu choices and by the cashier's one-step "IC001 2" entry
+        check("parseIntInRange accepts a number in range", Integer.valueOf(3).equals(InputHelper.parseIntInRange("3", 1, 5)));
+        check("parseIntInRange accepts both ends of the range", InputHelper.parseIntInRange("1", 1, 5) != null
+                && InputHelper.parseIntInRange("5", 1, 5) != null);
+        check("parseIntInRange rejects numbers out of range", InputHelper.parseIntInRange("0", 1, 5) == null
+                && InputHelper.parseIntInRange("6", 1, 5) == null);
+        check("parseIntInRange rejects text and decimals", InputHelper.parseIntInRange("abc", 1, 5) == null
+                && InputHelper.parseIntInRange("2.5", 1, 5) == null && InputHelper.parseIntInRange("", 1, 5) == null);
+
+        // Status lines shown under the role menus
+        Inventory inventory = sampleInventory();
+        check("Inventory size counts every product", inventory.size() == 5);
+        check("No product is out of stock at the start", inventory.countOutOfStock() == 0);
+        inventory.updateQuantity("IC002", 0);
+        check("A product set to 0 counts as out of stock", inventory.countOutOfStock() == 1);
+
+        // Without Terminal.init (plain mode) no escape codes are added, so saved output stays plain text
+        check("Plain mode output has no colour codes",
+                Terminal.style("Order added", Terminal.Style.SUCCESS).equals("Order added"));
     }
 }
