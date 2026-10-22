@@ -8,7 +8,7 @@ It is written in plain Java with no external libraries.
 | Feedback | Correction |
 |---|---|
 | Role passwords | `Authentication` stores the three password constants. Each role menu needs its own password. As with `sudo`, a wrong password can be retried up to 3 times (the message shows the attempts left). `C` cancels back to the main menu. The password is visible while it is typed, but the program itself never prints a password. |
-| Price limits | Prices must be from **P30.00 to P120.00**, inclusive. The rule is checked in three places: at input (`InputHelper.readPrice`), in the inventory logic (`Inventory.addProduct` / `updatePrice`), and in the model (`Product.setPrice` throws on an invalid price). This covers both add and update. |
+| Price limits | Prices must be from **P30.00 to P120.00**, inclusive, with at most 2 decimal places. The rule is checked in three places: at input (`InputHelper.readPrice`), in the inventory logic (`Inventory.addProduct` / `updatePrice`), and in the model (`Product.setPrice` throws on an invalid price). This covers both add and update. |
 | Sorting | **Sort products** asks for the key (`1` = Quantity, `2` = Price) and the order (`1` = Ascending, `2` = Descending). It then sorts with Insertion Sort and shows the result with a confirmation. There is no algorithm menu, and the behaviour is the same for every role. |
 | Quantity limit | A new product must start with **1 to 100** in stock. This is checked at input and in `Inventory.addProduct`. When updating an existing product, 0-100 is allowed, because a product can be sold out. |
 | Product tables | View, search and sort all print the same titled table. The header and rows share one format (`Product.TABLE_ROW_FORMAT`), so the columns always line up. |
@@ -18,7 +18,8 @@ It is written in plain Java with no external libraries.
 | Cancel input | Typing `C` at any prompt inside an operation cancels it and returns to the role menu, without saving partial data. |
 | Main menu | Roles are listed as `[1] Cashier`, `[2] Ice Cream Maker`, `[3] Manager`, `[0] Exit`. |
 | Order cancellation removed | The Ice Cream Maker's "Cancel an order" option was removed, as requested. Pending orders leave the queue only when they are processed. |
-| Terminal experience | The program now behaves like a real terminal application: it detects whether a person is typing in a terminal or input is piped from a file, and adapts (see section 3). The menu layouts are unchanged. |
+| Terminal experience | The program behaves like a real terminal application: it detects whether a person is typing in a terminal or input is piped from a file, and adapts (see section 3). The menu layouts are unchanged. |
+| Editing a product that is in a pending order | A customer's order no longer changes when the Manager edits the product afterwards. Each order line keeps the flavor, size, container and price it was ordered with. While the order waits, the product's flavor, size and container cannot be changed; a new price applies only to new orders; and lowering the stock below what pending orders need asks for confirmation first (see section 2). |
 
 ## 2. Requirement Analysis and Design Decisions
 
@@ -36,9 +37,22 @@ It is written in plain Java with no external libraries.
 - **Shared menu loop.** `User.showMenu()` holds the loop, the `[0] Log out` handling and the cancel handling. Each role only defines `printMenu()` and `handleChoice()`, so none of this is duplicated.
 - **Stock policy: deduct on processing.** The inventory changes **only** when the Ice Cream Maker processes an order. Adding an order to the queue does not touch the stock.
   - **Placing an order:** it is accepted only if the *available* stock covers it. Available stock is the current stock minus everything already in pending orders, so the queue never promises more than exists.
-  - **Processing an order:** stock is checked again, in case the Manager lowered it in the meantime. If there is not enough, the order stays at the front of the queue and nothing is deducted.
+  - **Viewing the inventory:** because pending orders are not yet subtracted, *View inventory* lists the stock they have reserved under the table (`IC005 Strawberry: 15 reserved, 0 left for new orders`). The table and the cashier's "no stock left" message therefore never contradict each other.
+  - **Processing an order:** stock is checked again, in case the Manager lowered it in the meantime. If there is not enough, the order stays at the front of the queue, nothing is deducted, and the message lists each item that is short.
   - **Backing out:** the cashier can still cancel an order with `C` while entering it. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
-- **Queue location.** The queue lives in `IceCreamMaker`, as the specification requires. The Cashier is given a reference to it and calls `placeOrder()`.
+- **An order line is a record of the sale.** `OrderItem` copies the product's flavor, serving size, container and price when the order is taken, like a printed receipt. A pending order's items and total therefore stay exactly as the customer ordered them, whatever the Manager edits later.
+- **Product edits while an order is pending.** `Manager.updateProduct` checks the queue (`IceCreamMaker.getPendingOrderIdsFor`) first:
+
+  | Field | While the product is in a pending order |
+  |---|---|
+  | Flavor, serving size, container | Blocked, naming the orders (`Cannot change the flavor of IC001: it is part of pending order ORD-001...`). Otherwise the Ice Cream Maker would make a different item from this stock. |
+  | Price | Allowed. Pending orders keep the price they were taken at, and a note says so. |
+  | Quantity | Allowed (for example after a recount). Going below what the pending orders need shows a warning and asks `Set the stock to 5 anyway? [y/N]`. |
+
+- **No duplicate products.** Two IDs for the same flavor, size and container would split one item's stock. `Inventory.addProduct` refuses them, and the Manager is told right after typing the container (`Vanilla (S, Cone) already exists as IC001. Update IC001 instead.`). An update that would turn a product into a copy of another is refused too. Flavors are compared ignoring upper/lower case.
+- **Consistent input.** Flavors are stored the same way however they are typed (`"  mint   CHOCO "` becomes `Mint Choco`). Prices accept a leading `P` (the prompt shows one) but reject anything that is not a plain amount with at most 2 decimals, such as `1e2` or `45.999`, instead of reading or rounding it silently.
+- **One line per product.** If the cashier adds the same product twice (`IC001 2`, later `IC001 3`), the order is queued as one line, `5x IC001`. Undo still removes the most recent addition while the order is being entered.
+- **Queue location.** The queue lives in `IceCreamMaker`, as the specification requires. The Cashier and Manager are given a reference to it.
 - **Where each algorithm is used.** Each one has a real job:
   - **Insertion Sort**: the *Sort products* option (by quantity or price, ascending or descending, stable).
   - **Quick Sort**: *View inventory* lists products by product ID.
@@ -77,35 +91,28 @@ The rest works the same in both modes:
 ```
 dsa-finals-group4/
 ├── README.md
-├── run.bat                                  compile and run (Windows)
-├── run.sh                                   compile and run (macOS / Linux)
-├── src/
-│   ├── Main.java                            entry point, role selection, sample products
-│   ├── roles/                               the people who use the system
-│   │   ├── User.java                        shared menu loop, view / search / sort
-│   │   ├── Cashier.java                     order entry (ArrayDeque stack for undo)
-│   │   ├── IceCreamMaker.java               Queue of pending orders (FIFO)
-│   │   ├── Manager.java                     add, update and remove products
-│   │   └── Authentication.java              password constants and login (3 attempts)
-│   ├── models/                              the shop's data
-│   │   ├── Product.java                     product model (price range enforced)
-│   │   ├── Order.java                       a customer order (one or more items)
-│   │   ├── OrderItem.java                   one product line in an order
-│   │   └── Inventory.java                   ArrayList + HashMap, product rules
-│   ├── algorithms/                          hand-written sorting and searching
-│   │   ├── SortAlgorithms.java              Insertion Sort, Merge Sort, Quick Sort
-│   │   └── SearchAlgorithms.java            Linear Search, Binary Search
-│   └── console/                             reading input and controlling the terminal
-│       ├── Terminal.java                    terminal detection, screens, colours
-│       ├── InputHelper.java                 validated console input with C to cancel
-│       └── OperationCancelledException.java thrown when the user types C
-└── test/
-    ├── AlgorithmTest.java                   automated checks (plain Java, no JUnit)
-    ├── demo-input.txt                       scripted session covering every feature
-    └── demo-output.txt                      output produced by that session
+├── Main.java                            entry point, role selection, sample products
+├── roles/                               the people who use the system
+│   ├── User.java                        shared menu loop, view / search / sort
+│   ├── Cashier.java                     order entry (ArrayDeque stack for undo)
+│   ├── IceCreamMaker.java               Queue of pending orders (FIFO)
+│   ├── Manager.java                     add, update and remove products
+│   └── Authentication.java              password constants and login (3 attempts)
+├── models/                              the shop's data
+│   ├── Product.java                     product model (price range enforced)
+│   ├── Order.java                       a customer order (one or more items)
+│   ├── OrderItem.java                   one order line, recorded when the order is taken
+│   └── Inventory.java                   ArrayList + HashMap, product rules
+├── algorithms/                          hand-written sorting and searching
+│   ├── SortAlgorithms.java              Insertion Sort, Merge Sort, Quick Sort
+│   └── SearchAlgorithms.java            Linear Search, Binary Search
+└── console/                             reading input and controlling the terminal
+    ├── Terminal.java                    terminal detection, screens, colours
+    ├── InputHelper.java                 validated console input with C to cancel
+    └── OperationCancelledException.java thrown when the user types C
 ```
 
-Each folder under `src` is a Java package with the same name (`package roles;`, `package models;` and so on), so IDEs such as IntelliJ, Eclipse and VS Code open the project without errors. `Main` stays directly in `src`.
+Each folder is a Java package with the same name (`package roles;`, `package models;` and so on), so IDEs such as IntelliJ, Eclipse and VS Code open the project without errors. `Main` stays in the project folder itself.
 
 ## 5. Passwords (demonstration only)
 
@@ -117,19 +124,16 @@ Each folder under `src` is a Java package with the same name (`package roles;`, 
 
 ## 6. Compile and Run (JDK 11 or newer)
 
-**Quick start:**
-- **Windows:** double-click `run.bat`, or run it from a terminal in the project folder.
-- **macOS / Linux:** run `sh run.sh`.
+From the project folder:
 
-The scripts compile into your system's temporary folder, so running the program never adds files or folders to the project.
+```bash
+javac -d out Main.java
+java -cp out Main
+```
 
-| Command | What it does |
-|---|---|
-| `run.bat` / `sh run.sh` | Starts the program |
-| `run.bat test` / `sh run.sh test` | Runs the automated tests |
-| `run.bat demo` / `sh run.sh demo` | Replays the scripted demo session |
+`javac` finds the other classes through their packages. The compiled classes go into `out`, which git ignores and which can be deleted at any time. IDEs can also run `Main` directly.
 
-Options are passed on to the program, for example `run.bat --plain`:
+Options:
 
 | Option | Effect |
 |---|---|
@@ -139,101 +143,130 @@ Options are passed on to the program, for example `run.bat --plain`:
 
 An unknown option prints the usage to standard error and exits with code 2.
 
-To compile by hand instead (this creates an `out` folder, which git ignores and which can be deleted at any time):
-
-```bash
-javac -d out -sourcepath src src/Main.java test/AlgorithmTest.java
-java -cp out Main
-java -cp out AlgorithmTest
-java -cp out Main < test/demo-input.txt
-```
+A session can also be replayed from a text file with one answer per line, for example `java -cp out Main < session.txt`. The answers are printed after their prompts, so the output reads like the real session.
 
 > IDE run consoles, and Git Bash in its default setup, do not give Java a real console, so the program runs in plain mode there (no screen clearing or colours). For the full interactive mode, use Windows Terminal, PowerShell, `cmd`, or a macOS/Linux terminal.
 
-## 7. Testing and Sample Output
+## 7. Scenario Testing and Sample Output
 
-`AlgorithmTest` runs 83 checks, and all of them pass. They cover:
-- Insertion, Merge and Quick Sort (by price, quantity and ID, stability, empty and single-item lists)
-- Insertion Sort by quantity and by price in descending order
-- The quantity limits: a new product needs 1-100; an update allows 0-100
-- Linear and Binary Search (including unsorted input, missing IDs and empty lists)
-- The price limits: 30.00 and 120.00 accepted; 29.99, 120.01, 25, 130 and 150 rejected, both in the constructor and in update
-- The inventory rules
-- Order placement leaving the inventory unchanged, and rejecting orders that exceed the stock not yet promised to pending orders
-- FIFO processing that subtracts stock only when each order is processed, and keeps an order in the queue if the stock dropped below what it needs
-- The pending-order list keeping arrival order as orders are processed and added
-- The ArrayDeque undo stack
-- Number parsing used by menu choices and the one-step `IC001 2` entry, the counts shown in the status lines, and plain mode output containing no colour codes
+Realistic shop sessions were replayed against the program, one answer per line, and every output was read through. They exposed the problems below, which are fixed in this version.
 
-`test/demo-input.txt` drives every menu of every role. `test/demo-output.txt` is the real output. Because the answers come from a file, each one is printed after its prompt (except passwords). Excerpts:
+| Scenario | Problem found | Now |
+|---|---|---|
+| Customer orders 2x Vanilla (S, Cone) for P90.00; the Manager then changes IC001's price to P60 and its flavor, size and container to Ube, L, Cup | The pending order changed to `2x IC001 Ube (L, Cup) = P120.00`, and the Ice Cream Maker made Ube | The order stays `2x Vanilla (S, Cone) = P90.00`; flavor, size and container changes are blocked while it waits; the new price applies to new orders only |
+| Manager renames pending Chocolate (IC003) to Vanilla S Cone | Changed a queued order and created a copy of IC001 | Blocked while pending; renaming another product into a copy of IC001 is refused |
+| Order of 10 Mango, then the Manager sets Mango's stock to 5 | No warning; the order was stuck at the front of the queue | Warning and `[y/N]` confirmation; the Ice Cream Maker is told `IC002 Mango: needs 10, only 5 in stock` |
+| All 15 Strawberry ordered, then the cashier views the inventory | Table showed 15 in stock, yet a new order was refused | A note under the table shows `15 reserved, 0 left for new orders` |
+| Manager adds Vanilla S Cone again as IC008 | Accepted: one item under two IDs | Refused right after the container is entered |
+| Prices `1e2`, `45.999`, `119.996`, `120.004`, `P45` | `1e2` read as P100.00; `119.996` rounded up to P120.00 while `120.004` was rejected; `P45` rejected | Only plain amounts with at most 2 decimals; a leading `P` is accepted |
+| Flavor typed as `  mint choco  ` | Saved in lower case, unlike the other flavors | Saved as `Mint Choco` |
+| Cashier adds IC001 twice in one order | Two separate lines for the same product | One line, `5x IC001` |
+| Selling a product with 0 stock | "has no more stock available" message listing zeros | `Cookies and Cream (IC004) is out of stock.` |
+| Removing a product in several pending orders | Message did not say which orders | `Cannot remove IC001: it is part of pending orders ORD-001, ORD-002.` |
+
+These sessions behaved correctly before and after the fixes: an empty inventory (every option), sold-out products, wrong and cancelled passwords, 3 failed attempts, menu input such as `01`, `Q` and `exit`, quantities such as `99999999999`, `2.5`, `0`, `-1` and `two`, invalid product IDs, undo, cancelling at every kind of prompt, end of input in the middle of an order, and the exit warning (`C`, an invalid answer, `N`, then `y`).
+
+Sample output from these sessions:
+
+**Editing a product that is in a pending order**
+```
+Order added to the queue: ORD-001 | Total: P90.00
+    - 2x IC001 Vanilla (S, Cone) = P90.00
+...
+Field to update [1-5] (or C to cancel): 4
+New price P30.00-P120.00 (or C to cancel): P60
+Product updated: IC001  | Vanilla            | S    | Cone |    50 |   P60.00
+Note: pending order ORD-001 keeps the price it was ordered at. The new price applies to new orders.
+...
+Field to update [1-5] (or C to cancel): 1
+Cannot change the flavor of IC001: it is part of pending order ORD-001. Process it first, so the customer gets what they ordered.
+...
+--- Pending Orders (first = next to process) ---
+1. ORD-001 | Total: P90.00
+    - 2x IC001 Vanilla (S, Cone) = P90.00
+```
+
+**Lowering stock below what pending orders need**
+```
+New quantity 0-100 (or C to cancel): 5
+The pending order ORD-001 needs 10 of IC002. With only 5 in stock, the Ice Cream Maker cannot process it until the product is restocked.
+Set the stock to 5 anyway? [y/N] (or C to cancel): y
+Product updated: IC002  | Mango              | M    | Cone |     5 |   P60.00
+...
+Next order: ORD-001 | Total: P600.00
+    - 10x IC002 Mango (M, Cone) = P600.00
+Cannot process ORD-001: not enough stock for this order.
+    - IC002 Mango: needs 10, only 5 in stock
+The order stays at the front of the queue. Ask the Manager to restock first.
+```
+
+**Reserved stock under the inventory table**
+```
+=== PRODUCT INVENTORY (by product ID) ===
+------------------------------------------------------------
+ID     | Flavor             | Size | Type | Stock |    Price
+------------------------------------------------------------
+IC001  | Vanilla            | S    | Cone |    50 |   P45.00
+IC002  | Mango              | M    | Cone |    25 |   P60.00
+IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
+IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
+IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
+------------------------------------------------------------
+Reserved for pending orders (subtracted when each order is processed):
+  IC005 Strawberry: 15 reserved, 0 left for new orders
+```
+
+**Adding a product (duplicate check, quantity and price limits)**
+```
+Enter product ID, e.g. IC006 (or C to cancel): IC008
+Flavor: vanilla
+Serving size (S/M/L): s
+Container type (cone/cup): cone
+Vanilla (S, Cone) already exists as IC001. Update IC001 instead. Product not added.
+...
+Enter product ID, e.g. IC006 (or C to cancel): IC006
+Flavor: Ube
+Serving size (S/M/L): L
+Container type (cone/cup): cone
+Quantity in stock (1-100): 0
+Please enter a whole number from 1 to 100.
+Quantity in stock (1-100): 101
+Please enter a whole number from 1 to 100.
+Quantity in stock (1-100): 20
+Price (P30.00-P120.00): P25
+Invalid price. Enter an amount from P30.00 to P120.00 with at most 2 decimal places, e.g. 45 or 45.50.
+Price (P30.00-P120.00): P30
+Product IC006 added successfully.
+```
 
 **Authentication (3 attempts; a password read from a file is not copied into the output)**
 ```
-Choice [0-3]: 3
-Enter Manager password (or C to cancel):
-Incorrect password for Manager. 2 attempts left.
-Enter Manager password (or C to cancel):
-Access granted. Welcome, Manager!
-...
 Enter Cashier password (or C to cancel):
 Incorrect password for Cashier. 2 attempts left.
 Enter Cashier password (or C to cancel):
 Incorrect password for Cashier. 1 attempt left.
 Enter Cashier password (or C to cancel):
 3 incorrect password attempts for Cashier. Returning to Main Menu...
-...
-Enter Cashier password (or C to cancel):
-Login cancelled. Returning to Main Menu...
 ```
 
-**Menu prompts (Enter alone shows the prompt again; the status line shows live counts)**
+**Order entry (running total, one-step entry, repeated product merged)**
 ```
-[0] Exit
-Choice [0-3]:
-Choice [0-3]: 9
-Invalid choice "9". Please enter a number from 0 to 3.
-...
-[0] Log out
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001 2
+Added to order: 2x IC001 Vanilla (S, Cone) = P90.00
+Items in this order: 1 | Running total: P90.00
 
-Products: 6 | Pending orders: 3
-Choice [0-5]: exit
-Cashier logged out.
-```
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC003 1
+Added to order: 1x IC003 Chocolate (M, Cup) = P65.00
+Items in this order: 2 | Running total: P155.00
 
-**Price validation**
-```
-Price (P30.00-P120.00): P25
-Invalid price. Price must be from P30.00 to P120.00.
-Price (P30.00-P120.00): P130
-Invalid price. Price must be from P30.00 to P120.00.
-Price (P30.00-P120.00): P30
-Container type (cone/cup): cone
-Product IC006 added successfully.
-```
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001 3
+Added to order: 3x IC001 Vanilla (S, Cone) = P135.00
+Items in this order: 3 | Running total: P290.00
 
-**Input cancellation**
-```
---- Add Product (enter C at any prompt to cancel) ---
-Enter product ID, e.g. IC006 (or C to cancel): IC008
-Flavor: Pistachio
-Serving size (S/M/L): C
-Operation cancelled. Returning to Manager Menu...
-```
-
-**Quantity limit when adding a product (1-100)**
-```
-Quantity in stock (1-100): 0
-Please enter a whole number from 1 to 100.
-Quantity in stock (1-100): 101
-Please enter a whole number from 1 to 100.
-Quantity in stock (1-100): 20
-```
-
-**Confirmation with a safe default (Enter alone answers No)**
-```
-Product: IC007  | Mocha              | M    | Cup  |    10 |  P120.00
-Remove this product? [y/N] (or C to cancel):
-Product was not removed.
+Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
+Order added to the queue: ORD-001 | Total: P290.00
+    - 5x IC001 Vanilla (S, Cone) = P225.00
+    - 1x IC003 Chocolate (M, Cup) = P65.00
 ```
 
 **Sorting (Insertion Sort, user picks the key and the order)**
@@ -249,131 +282,33 @@ Sort order:
 Choice [1-2] (or C to cancel): 2
 
 Sorting complete: products sorted by quantity (highest to lowest) using Insertion Sort.
-
-=== SORTED PRODUCTS (quantity, highest to lowest) ===
-------------------------------------------------------------
-ID     | Flavor             | Size | Type | Stock |    Price
-------------------------------------------------------------
-IC001  | Vanilla            | S    | Cone |    50 |   P45.00
-IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
-IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
-IC002  | Mango              | M    | Cone |    25 |   P60.00
-IC006  | Ube                | L    | Cone |    20 |   P99.50
-IC005  | Strawberry         | L    | Cup  |    15 |   P85.00
-------------------------------------------------------------
-```
-
-**Search results table**
-```
-Enter flavor keyword (or C to cancel): co
-
-=== SEARCH RESULTS (flavor contains "co") - 2 found ===
-------------------------------------------------------------
-ID     | Flavor             | Size | Type | Stock |    Price
-------------------------------------------------------------
-IC003  | Chocolate          | M    | Cup  |    40 |   P65.00
-IC004  | Cookies and Cream  | L    | Cup  |    30 |   P90.00
-------------------------------------------------------------
-```
-
-**Order creation (Cashier, with running total and one-step entry)**
-```
---- New Customer Order ---
-How to enter an order:
-  - Type a product ID (e.g. IC001) to add that product to the order.
-    To skip the quantity question, type the quantity after it (e.g. IC001 2).
-  - Type D when the order is complete to send it to the queue.
-  - Type U to remove the last product you added.
-  - Type C to cancel the whole order.
-...
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001
-How many Vanilla (IC001)? Enter 1-50 (or C to cancel the order): 2
-Added to order: 2x IC001 Vanilla (S, Cone) = P90.00
-Items in this order: 1 | Running total: P90.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC003
-How many Chocolate (IC003)? Enter 1-40 (or C to cancel the order): 1
-Added to order: 1x IC003 Chocolate (M, Cup) = P65.00
-Items in this order: 2 | Running total: P155.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): U
-Removed from order: 1x IC003 Chocolate (M, Cup) = P65.00
-Items in this order: 1 | Running total: P90.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC002 30
-Quantity for Mango (IC002) must be a whole number from 1 to 25. Nothing was added.
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC002 3
-Added to order: 3x IC002 Mango (M, Cone) = P180.00
-Items in this order: 2 | Running total: P270.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
-Order added to the queue: ORD-001 | Total: P270.00
-    - 2x IC001 Vanilla (S, Cone) = P90.00
-    - 3x IC002 Mango (M, Cone) = P180.00
-Orders waiting: 1
 ```
 
 **FIFO processing (Ice Cream Maker)**
 ```
-Pending orders: 3 | Next: ORD-001
-Choice [0-5]: 5
-
 Next order: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
-Process this order? [Y/n] (or C to cancel): N
-Order ORD-001 was left in the queue.
-...
 Process this order? [Y/n] (or C to cancel): Y
 Order ORD-001 processed successfully. Inventory updated:
     - IC001 Vanilla: -2, stock now 48
     - IC002 Mango: -3, stock now 22
 Orders still waiting: 2
-...
-Next order: ORD-002 | Total: P1275.00
-    - 15x IC005 Strawberry (L, Cup) = P1275.00
-Process this order? [Y/n] (or C to cancel):
-Order ORD-002 processed successfully. Inventory updated:
-    - IC005 Strawberry: -15, stock now 0
-Orders still waiting: 1
-...
-Pending orders: 0 | Next: none
-Choice [0-5]: 5
-No pending orders to process.
 ```
-
-**Exiting with an unprocessed order**
-```
-Choice [0-3]: 0
-1 order is still pending and will be lost when the program closes.
-Exit anyway? [y/N] (or C to cancel):
-...
-Choice [0-3]: q
-1 order is still pending and will be lost when the program closes.
-Exit anyway? [y/N] (or C to cancel): y
-Thank you for using the SC Ice Cream Management System. Goodbye!
-```
-
-**Stock consistency.** In the demo, the inventory viewed by the cashier *after* placing three orders is still unchanged (Vanilla 50, Mango 25, Strawberry 15, Cookies and Cream 30). The stock only drops when the Ice Cream Maker processes each order:
-- Vanilla 50 → 48 and Mango 25 → 22 (ORD-001)
-- Strawberry 15 → 0 (ORD-002)
-- Cookies and Cream 30 → 28 (ORD-003)
-- Ube unchanged at 20 (the cashier cancelled that order with `C` before finishing it)
 
 ## 8. Requirements Checklist
 
 | Requirement | Implemented in | Done |
 |---|---|---|
 | Product with ID, flavor, serving size, quantity, price, container | `Product` | ✅ |
-| Add product (unique ID, valid price and stock) | `Manager.addProduct`, `Inventory.addProduct` | ✅ |
-| Update product details (checks the product exists) | `Manager.updateProduct`, `Inventory.updatePrice` / `updateQuantity` | ✅ |
+| Add product (unique ID, no duplicate flavor/size/container, valid price and stock) | `Manager.addProduct`, `Inventory.addProduct`, `Inventory.findSameProduct` | ✅ |
+| Update product details (checks the product exists; protects pending orders; no duplicates) | `Manager.updateProduct`, `Inventory.updatePrice` / `updateQuantity` | ✅ |
 | Remove product (checks it exists, confirmation, blocked while in a pending order) | `Manager.removeProduct`, `Inventory.removeProduct` | ✅ |
-| Display inventory | `User.viewInventory` | ✅ |
+| Display inventory, with stock reserved by pending orders | `User.viewInventory` | ✅ |
 | Search by ID / flavor | `User.searchProducts`, `SearchAlgorithms` | ✅ |
 | Adjust inventory quantities | `Inventory.updateQuantity`, `Inventory.adjustStock` (subtracted when an order is processed) | ✅ |
 | Password per role, retry (3 attempts), cancel, passwords never printed, constants in one class | `Authentication`, `Terminal.readPassword` | ✅ |
-| Price 30.00–120.00 on add and update, enforced in logic | `Product.isValidPrice` / `setPrice`, `Inventory`, `InputHelper.readPrice` | ✅ |
+| Price 30.00–120.00 on add and update, enforced in logic | `Product.isValidPrice` / `setPrice`, `Inventory`, `InputHelper.parsePrice` | ✅ |
 | Sort products: choose quantity or price, then ascending or descending; Insertion Sort; no algorithm menu; all roles | `User.sortProducts` | ✅ |
 | New product quantity must be 1-100 | `Manager.addProduct`, `Inventory.addProduct` | ✅ |
 | Search results shown in an aligned, titled table | `Inventory.displayProducts`, `Product.TABLE_ROW_FORMAT` | ✅ |
@@ -383,6 +318,7 @@ Thank you for using the SC Ice Cream Management System. Goodbye!
 | Main menu order: Cashier, Ice Cream Maker, Manager, Exit | `Main.main` | ✅ |
 | Ice Cream Maker menu (4 = view pending, 5 = process next, no cancel option) | `IceCreamMaker.printMenu` | ✅ |
 | Cashier creates validated orders with multiple items and unique IDs | `Cashier.addNewOrder`, `IceCreamMaker.placeOrder` | ✅ |
+| A pending order keeps its items and total when products are edited | `OrderItem` (recorded at order time), `Manager.updateProduct` | ✅ |
 | No over-ordering across pending orders | `placeOrder` and the cart compare against stock minus pending orders (`getAvailableQuantity`) | ✅ |
 | Cashier and Ice Cream Maker can view pending orders | `IceCreamMaker.displayPendingOrders` | ✅ |
 | FIFO processing; order removed only once processed | `IceCreamMaker.processNextOrderFromMenu` (`peek`, confirm, `poll`) | ✅ |
@@ -402,6 +338,6 @@ Thank you for using the SC Ice Cream Management System. Goodbye!
 | No built-in sort or search replacing the required algorithms | Only hand-written algorithms are used | ✅ |
 | Standard Java, console only, no external libraries | All files | ✅ |
 | Terminal-aware behaviour: cleared screens, pauses and colours in a real terminal; plain, replayable output otherwise | `Terminal` | ✅ |
-| Source files grouped by purpose into packages (`roles`, `models`, `algorithms`, `console`); builds leave no files in the project | `src/`, `run.bat`, `run.sh` | ✅ |
+| Source files grouped by purpose into packages (`roles`, `models`, `algorithms`, `console`) | project folders | ✅ |
 | Status line under each role menu | `User.showMenu`, each role's `getStatusLine` | ✅ |
 | `[Y/n]` / `[y/N]` defaults; warning before exiting with pending orders | `InputHelper.readYesNo`, `Main.confirmExit` | ✅ |

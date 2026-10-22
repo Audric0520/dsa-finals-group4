@@ -45,6 +45,11 @@ public class Cashier extends User {
     }
 
     @Override
+    protected IceCreamMaker getOrderQueue() {
+        return iceCreamMaker;
+    }
+
+    @Override
     protected String getStatusLine() {
         return "Products: " + inventory.size() + " | Pending orders: " + iceCreamMaker.getPendingOrders().size();
     }
@@ -143,9 +148,13 @@ public class Cashier extends User {
         }
         // Stock not already needed by pending orders or by this order so far
         int available = iceCreamMaker.getAvailableQuantity(product) - quantityInCart(cart, product);
+        if (product.getQuantity() == 0) {
+            Terminal.error(product.getFlavor() + " (" + productId + ") is out of stock.");
+            return;
+        }
         if (available <= 0) {
-            Terminal.error(product.getFlavor() + " (" + productId + ") has no more stock available"
-                    + " (in stock: " + product.getQuantity() + ", in pending orders: "
+            Terminal.error(product.getFlavor() + " (" + productId + ") has no stock left for new orders"
+                    + " (in stock: " + product.getQuantity() + ", reserved by pending orders: "
                     + iceCreamMaker.getPendingQuantity(product) + ", already in this order: "
                     + quantityInCart(cart, product) + ").");
             return;
@@ -189,12 +198,27 @@ public class Cashier extends User {
         return total;
     }
 
-    // push() adds to the front of the deque, so read it from the back to get the original order.
+    /**
+     * push() adds to the front of the deque, so read it from the back to get the original order.
+     * A product added more than once becomes one line with the total quantity (like a receipt),
+     * so the Ice Cream Maker sees "5x Vanilla" instead of "2x Vanilla" and "3x Vanilla".
+     */
     private ArrayList<OrderItem> toListInOrderAdded(ArrayDeque<OrderItem> cart) {
         ArrayList<OrderItem> items = new ArrayList<>();
         Iterator<OrderItem> iterator = cart.descendingIterator();
         while (iterator.hasNext()) {
-            items.add(iterator.next());
+            OrderItem item = iterator.next();
+            boolean merged = false;
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i).getProduct() == item.getProduct()) {
+                    items.set(i, new OrderItem(item.getProduct(), items.get(i).getQuantity() + item.getQuantity()));
+                    merged = true;
+                    break;
+                }
+            }
+            if (!merged) {
+                items.add(item);
+            }
         }
         return items;
     }

@@ -38,6 +38,9 @@ public abstract class User {
     /** One line of live information shown under the menu, e.g. how many orders are waiting. */
     protected abstract String getStatusLine();
 
+    /** The queue of pending orders, which the IceCreamMaker keeps. */
+    protected abstract IceCreamMaker getOrderQueue();
+
     public void showMenu() {
         while (true) {
             Terminal.newScreen();
@@ -60,11 +63,29 @@ public abstract class User {
         }
     }
 
-    /** Shows every product, listed by product ID (sorted with Quick Sort). */
+    /**
+     * Shows every product, listed by product ID (sorted with Quick Sort).
+     * Stock is only subtracted when an order is processed, so the table alone would show
+     * stock that pending orders have already claimed. The note under it shows what is
+     * really left for new orders.
+     */
     public void viewInventory() {
         ArrayList<Product> products = inventory.getProducts();
         SortAlgorithms.quickSort(products, SortAlgorithms.BY_ID);
         Inventory.displayProducts("PRODUCT INVENTORY (by product ID)", products);
+
+        boolean first = true;
+        for (Product product : products) {
+            int reserved = getOrderQueue().getPendingQuantity(product);
+            if (reserved > 0) {
+                if (first) {
+                    System.out.println("Reserved for pending orders (subtracted when each order is processed):");
+                    first = false;
+                }
+                System.out.printf("  %s %s: %d reserved, %d left for new orders%n", product.getProductId(),
+                        product.getFlavor(), reserved, Math.max(0, product.getQuantity() - reserved));
+            }
+        }
     }
 
     public void searchProducts() {

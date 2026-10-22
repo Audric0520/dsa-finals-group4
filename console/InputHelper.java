@@ -85,18 +85,27 @@ public class InputHelper {
     /** Price must be from Product.MIN_PRICE to Product.MAX_PRICE (inclusive). */
     public static double readPrice(String prompt) {
         while (true) {
-            String text = readText(prompt);
-            try {
-                double price = Double.parseDouble(text);
-                if (Product.isValidPrice(price)) {
-                    return Math.round(price * 100) / 100.0;
-                }
-            } catch (NumberFormatException e) {
-                // falls through to the error message below
+            Double price = parsePrice(readText(prompt));
+            if (price != null) {
+                return price;
             }
-            Terminal.error(String.format("Invalid price. Price must be from P%.2f to P%.2f.", Product.MIN_PRICE,
-                    Product.MAX_PRICE));
+            Terminal.error(String.format("Invalid price. Enter an amount from P%.2f to P%.2f with at most"
+                    + " 2 decimal places, e.g. 45 or 45.50.", Product.MIN_PRICE, Product.MAX_PRICE));
         }
+    }
+
+    /**
+     * Returns the price, or null if the text is not a valid price. A leading P is allowed,
+     * because the prompt shows one. Only plain amounts with at most 2 decimal places are
+     * accepted, so "1e2" or "45.999" are rejected instead of being read or rounded silently.
+     */
+    public static Double parsePrice(String text) {
+        String amount = text.startsWith("P") || text.startsWith("p") ? text.substring(1).trim() : text;
+        if (!amount.matches("\\d{1,3}(\\.\\d{1,2})?")) {
+            return null;
+        }
+        double price = Double.parseDouble(amount);
+        return Product.isValidPrice(price) ? price : null;
     }
 
     /** Checks the format IC followed by 3 digits, e.g. IC001. */
@@ -116,12 +125,34 @@ public class InputHelper {
 
     public static String readFlavor(String prompt) {
         while (true) {
-            String flavor = readText(prompt);
+            String flavor = formatFlavor(readText(prompt));
             if (flavor.matches("[a-zA-Z ]+") && flavor.length() <= 18) {
                 return flavor;
             }
             Terminal.error("Flavor must contain only letters and spaces (max 18 characters).");
         }
+    }
+
+    /**
+     * Writes every flavor the same way, however it was typed: single spaces, and each word
+     * capitalised except small joining words, e.g. "cookies  AND cream" -> "Cookies and Cream".
+     */
+    public static String formatFlavor(String text) {
+        StringBuilder flavor = new StringBuilder();
+        for (String word : text.trim().split("\\s+")) {
+            String lower = word.toLowerCase();
+            boolean joiningWord = lower.equals("and") || lower.equals("or") || lower.equals("of")
+                    || lower.equals("with");
+            if (flavor.length() > 0) {
+                flavor.append(' ');
+            }
+            if (joiningWord && flavor.length() > 0) {
+                flavor.append(lower);
+            } else {
+                flavor.append(Character.toUpperCase(lower.charAt(0))).append(lower.substring(1));
+            }
+        }
+        return flavor.toString();
     }
 
     public static char readServingSize(String prompt) {

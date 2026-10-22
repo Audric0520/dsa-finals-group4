@@ -51,6 +51,11 @@ public class IceCreamMaker extends User {
     }
 
     @Override
+    protected IceCreamMaker getOrderQueue() {
+        return this;
+    }
+
+    @Override
     protected String getStatusLine() {
         Order next = pendingOrders.peek();
         return "Pending orders: " + pendingOrders.size() + " | Next: " + (next == null ? "none" : next.getOrderId());
@@ -156,14 +161,21 @@ public class IceCreamMaker extends User {
         return pendingOrders.poll();
     }
 
-    /** Used by the Manager: a product that is part of a pending order cannot be removed. */
-    public boolean hasPendingOrderFor(String productId) {
+    /**
+     * IDs of the pending orders that contain the product, e.g. "ORD-001, ORD-003", or "" if none.
+     * Used by the Manager, who cannot remove such a product or change what it is.
+     */
+    public String getPendingOrderIdsFor(String productId) {
+        StringBuilder ids = new StringBuilder();
         for (Order order : pendingOrders) {
             if (order.containsProduct(productId)) {
-                return true;
+                if (ids.length() > 0) {
+                    ids.append(", ");
+                }
+                ids.append(order.getOrderId());
             }
         }
-        return false;
+        return ids.toString();
     }
 
     public ArrayList<Order> getPendingOrders() {
@@ -195,6 +207,15 @@ public class IceCreamMaker extends User {
         System.out.println("\nNext order: " + next);
         if (!hasStockToProcess(next)) {
             Terminal.error("Cannot process " + next.getOrderId() + ": not enough stock for this order.");
+            ArrayList<OrderItem> items = next.getItems();
+            for (OrderItem item : items) {
+                Product product = item.getProduct();
+                int needed = totalQuantity(items, product);
+                if (needed > product.getQuantity()) {
+                    Terminal.error("    - " + product.getProductId() + " " + product.getFlavor() + ": needs "
+                            + needed + ", only " + product.getQuantity() + " in stock");
+                }
+            }
             Terminal.error("The order stays at the front of the queue. Ask the Manager to restock first.");
             return;
         }

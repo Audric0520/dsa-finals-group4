@@ -39,6 +39,11 @@ public class Manager extends User {
     }
 
     @Override
+    protected IceCreamMaker getOrderQueue() {
+        return iceCreamMaker;
+    }
+
+    @Override
     protected String getStatusLine() {
         return "Products: " + inventory.size() + " | Out of stock: " + inventory.countOutOfStock()
                 + " | Pending orders: " + iceCreamMaker.getPendingOrders().size();
@@ -70,7 +75,11 @@ public class Manager extends User {
         }
     }
 
-    /** Every value is collected first. The product is saved only after the last input. */
+    /**
+     * Every value is collected first. The product is saved only after the last input.
+     * Flavor, size and container come first, so a product that already exists is caught
+     * before the quantity and price are typed.
+     */
     private void addProduct() {
         System.out.println();
         Terminal.title("--- Add Product (enter C at any prompt to cancel) ---");
@@ -81,11 +90,17 @@ public class Manager extends User {
         }
         String flavor = InputHelper.readFlavor("Flavor: ");
         char size = InputHelper.readServingSize("Serving size (S/M/L): ");
+        String container = InputHelper.readContainerType("Container type (cone/cup): ");
+        Product same = inventory.findSameProduct(flavor, size, container, null);
+        if (same != null) {
+            Terminal.error(flavor + " (" + size + ", " + container + ") already exists as " + same.getProductId()
+                    + ". Update " + same.getProductId() + " instead. Product not added.");
+            return;
+        }
         int quantity = InputHelper.readInt("Quantity in stock (" + Inventory.MIN_NEW_QUANTITY + "-"
                 + Inventory.MAX_STOCK + "): ", Inventory.MIN_NEW_QUANTITY, Inventory.MAX_STOCK);
         double price = InputHelper.readPrice(String.format("Price (P%.2f-P%.2f): P", Product.MIN_PRICE,
                 Product.MAX_PRICE));
-        String container = InputHelper.readContainerType("Container type (cone/cup): ");
 
         if (inventory.addProduct(new Product(id, flavor, size, quantity, price, container))) {
             Terminal.success("Product " + id + " added successfully.");
@@ -108,6 +123,14 @@ public class Manager extends User {
         return product;
     }
 
+    /**
+     * Changes one field of a product. While a product is in a pending order:
+     * - its flavor, serving size and container cannot change, because the customer ordered
+     *   exactly that item and the Ice Cream Maker must make it from this product's stock
+     * - its price can change; pending orders keep the price they were taken at
+     * - its stock can change, but going below what the pending orders need asks first,
+     *   because those orders then cannot be processed until the product is restocked
+     */
     private void updateProduct() {
         System.out.println();
         Terminal.title("--- Update Product Details ---");
@@ -123,27 +146,98 @@ public class Manager extends User {
         System.out.println("[5] Container type");
         int field = InputHelper.readInt("Field to update [1-5] (or C to cancel): ", 1, 5);
         String id = product.getProductId();
+        String pendingOrders = iceCreamMaker.getPendingOrderIdsFor(id);
+
+        if ((field == 1 || field == 2 || field == 5) && !pendingOrders.isEmpty()) {
+            String fieldName = field == 1 ? "flavor" : field == 2 ? "serving size" : "container type";
+            Terminal.error("Cannot change the " + fieldName + " of " + id + ": it is part of "
+                    + describeOrders(pendingOrders) + ". Process " + itOrThem(pendingOrders)
+                    + " first, so the customer gets what they ordered.");
+            return;
+        }
 
         switch (field) {
             case 1:
-                product.setFlavor(InputHelper.readFlavor("New flavor (or C to cancel): "));
+                String flavor = InputHelper.readFlavor("New flavor (or C to cancel): ");
+                if (isDuplicate(product, flavor, product.getServingSize(), product.getContainerType())) {
+                    return;
+                }
+                product.setFlavor(flavor);
                 break;
             case 2:
-                product.setServingSize(InputHelper.readServingSize("New serving size S/M/L (or C to cancel): "));
+                char size = InputHelper.readServingSize("New serving size S/M/L (or C to cancel): ");
+                if (isDuplicate(product, product.getFlavor(), size, product.getContainerType())) {
+                    return;
+                }
+                product.setServingSize(size);
                 break;
             case 3:
-                inventory.updateQuantity(id, InputHelper.readInt(
-                        "New quantity 0-" + Inventory.MAX_STOCK + " (or C to cancel): ", 0, Inventory.MAX_STOCK));
+                int quantity = InputHelper.readInt("New quantity 0-" + Inventory.MAX_STOCK + " (or C to cancel): ", 0,
+                        Inventory.MAX_STOCK);
+                if (!confirmStockBelowReserved(product, quantity, pendingOrders)) {
+                    return;
+                }
+                inventory.updateQuantity(id, quantity);
                 break;
             case 4:
                 inventory.updatePrice(id, InputHelper.readPrice(String.format(
                         "New price P%.2f-P%.2f (or C to cancel): P", Product.MIN_PRICE, Product.MAX_PRICE)));
                 break;
             default:
-                product.setContainerType(InputHelper.readContainerType("New container cone/cup (or C to cancel): "));
+                String container = InputHelper.readContainerType("New container cone/cup (or C to cancel): ");
+                if (isDuplicate(product, product.getFlavor(), product.getServingSize(), container)) {
+                    return;
+                }
+                product.setContainerType(container);
                 break;
         }
         Terminal.success("Product updated: " + product);
+        if (field == 4 && !pendingOrders.isEmpty()) {
+            Terminal.warning("Note: " + describeOrders(pendingOrders)
+                    + (isPlural(pendingOrders) ? " keep the price they were" : " keeps the price it was")
+                    + " ordered at. The new price applies to new orders.");
+        }
+    }
+
+    // Two IDs for the same item would split its stock, so a change that creates one is refused.
+    private boolean isDuplicate(Product product, String flavor, char size, String container) {
+        Product same = inventory.findSameProduct(flavor, size, container, product.getProductId());
+        if (same == null) {
+            return false;
+        }
+        Terminal.error("That would make " + product.getProductId() + " the same item as " + same.getProductId()
+                + " (" + flavor + ", " + size + ", " + container + "). Product not updated.");
+        return true;
+    }
+
+    // Returns true if the new stock covers the pending orders, or the Manager confirms it anyway.
+    private boolean confirmStockBelowReserved(Product product, int newQuantity, String pendingOrders) {
+        int reserved = iceCreamMaker.getPendingQuantity(product);
+        if (newQuantity >= reserved) {
+            return true;
+        }
+        Terminal.warning("The " + describeOrders(pendingOrders) + (isPlural(pendingOrders) ? " need " : " needs ")
+                + reserved + " of " + product.getProductId() + ". With only " + newQuantity
+                + " in stock, the Ice Cream Maker cannot process " + itOrThem(pendingOrders)
+                + " until the product is restocked.");
+        if (InputHelper.readYesNo("Set the stock to " + newQuantity + " anyway?", false)) {
+            return true;
+        }
+        Terminal.warning("Quantity not changed.");
+        return false;
+    }
+
+    // "pending order ORD-001" or "pending orders ORD-001, ORD-002"
+    private static String describeOrders(String orderIds) {
+        return (isPlural(orderIds) ? "pending orders " : "pending order ") + orderIds;
+    }
+
+    private static boolean isPlural(String orderIds) {
+        return orderIds.contains(",");
+    }
+
+    private static String itOrThem(String orderIds) {
+        return isPlural(orderIds) ? "them" : "it";
     }
 
     private void removeProduct() {
@@ -153,9 +247,10 @@ public class Manager extends User {
         if (product == null) {
             return;
         }
-        if (iceCreamMaker.hasPendingOrderFor(product.getProductId())) {
-            Terminal.error("Cannot remove " + product.getProductId()
-                    + ": it is part of a pending order. Process that order first.");
+        String pendingOrders = iceCreamMaker.getPendingOrderIdsFor(product.getProductId());
+        if (!pendingOrders.isEmpty()) {
+            Terminal.error("Cannot remove " + product.getProductId() + ": it is part of "
+                    + describeOrders(pendingOrders) + ". Process " + itOrThem(pendingOrders) + " first.");
             return;
         }
         System.out.println("Product: " + product);
