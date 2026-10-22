@@ -3,8 +3,6 @@ package models;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import console.Terminal;
-
 /**
  * Stores and manages all ice cream products.
  *
@@ -135,7 +133,7 @@ public class Inventory {
     /** Prints a title and the products as a table. Used by view, search and sort. */
     public static void displayProducts(String title, ArrayList<Product> list) {
         System.out.println();
-        Terminal.title("=== " + title + " ===");
+        System.out.println("=== " + title + " ===");
         if (list.isEmpty()) {
             System.out.println("No products to display.");
             return;
@@ -146,9 +144,7 @@ public class Inventory {
         System.out.println(header);
         System.out.println(line);
         for (Product product : list) {
-            // Sold-out rows stand out in red (the row is coloured whole, so the columns stay aligned)
-            System.out.println(product.getQuantity() == 0 ? Terminal.style(product.toString(), Terminal.Style.ERROR)
-                    : product.toString());
+            System.out.println(product);
         }
         System.out.println(line);
     }

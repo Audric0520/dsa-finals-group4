@@ -10,60 +10,38 @@ import java.io.InputStreamReader;
  * it checks what it is connected to and behaves accordingly.
  *
  * Interactive mode - a person is typing in a real terminal window:
- *   - every menu starts on a cleared screen, and results stay up until Enter is pressed
- *   - errors, successes and warnings are coloured (if the terminal supports colours)
+ *   every menu starts on a cleared screen, and results stay up until Enter is pressed.
  *
  * Plain mode - there is no real terminal (input comes from a file or a pipe, or the program
  * runs in an IDE's console), or the --plain option was given:
- *   - no screen clearing, no pauses and no colours, so the output can be saved and compared
+ *   - no screen clearing and no pauses, so the output can be saved and compared
  *   - answers read from a file or pipe are printed after their prompt (passwords excepted),
  *     so the saved output reads like a real terminal session
  */
 public class Terminal {
-
-    /** Kinds of message. Each one has its own colour when colours are on. */
-    public enum Style {
-        ERROR("31"), SUCCESS("32"), WARNING("33"), TITLE("1;36"), HINT("2");
-
-        private final String code;
-
-        Style(String code) {
-            this.code = code;
-        }
-    }
-
     private static final String ESC = "\u001B[";
-    private static final String RESET = ESC + "0m";
 
     // Used when there is no real terminal
     private static final BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
 
     private static Console console;  // the real terminal, or null if there is none
     private static boolean screens;  // clear the screen for each menu and pause after results
-    private static boolean ansi;     // the terminal understands escape codes (clear, colours)
-    private static boolean colors;
+    private static boolean ansi;     // the terminal understands escape codes (used to clear the screen)
 
     // A message that must still be visible after the next screen is cleared
     private static String notice;
 
     /**
      * Detects the terminal. Without this call everything runs in plain mode.
-     * plain turns off screen clearing, pauses and colours; noColor turns off only colours.
+     * plain turns off screen clearing and pauses.
      */
-    public static void init(boolean plain, boolean noColor) {
+    public static void init(boolean plain) {
         console = System.console();
         if (console != null && !isRealTerminal(console)) {
             console = null;
         }
         screens = console != null && !plain;
         ansi = screens && supportsAnsi();
-        // NO_COLOR is a common convention for turning colours off in every program (no-color.org)
-        colors = ansi && !noColor && System.getenv("NO_COLOR") == null;
-
-        if (colors) {
-            // If the program is stopped with Ctrl+C, give the terminal back its normal colours
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> System.out.print(RESET)));
-        }
     }
 
     // Java 22+ returns a Console even when input is redirected; isTerminal() tells them apart.
@@ -182,7 +160,7 @@ public class Terminal {
     /** Interactive mode: keeps the result on screen until Enter is pressed. */
     public static void pause() {
         if (screens) {
-            readLine(style("\nPress Enter to continue...", Style.HINT));
+            readLine("\nPress Enter to continue...");
         }
     }
 
@@ -190,11 +168,11 @@ public class Terminal {
      * Shows a short message that must survive the next screen clear, such as "Cashier logged out.".
      * Interactive mode shows it just above the next menu prompt; plain mode prints it right away.
      */
-    public static void notice(Style style, String message) {
+    public static void notice(String message) {
         if (screens) {
-            notice = style(message, style);
+            notice = message;
         } else {
-            System.out.println(style(message, style));
+            System.out.println(message);
         }
     }
 
@@ -204,32 +182,5 @@ public class Terminal {
             System.out.println(notice);
             notice = null;
         }
-    }
-
-    // ===================== Styled output =====================
-
-    /** Returns the text in the given colour, or unchanged when colours are off. */
-    public static String style(String text, Style style) {
-        return colors ? ESC + style.code + "m" + text + RESET : text;
-    }
-
-    public static void error(String message) {
-        System.out.println(style(message, Style.ERROR));
-    }
-
-    public static void success(String message) {
-        System.out.println(style(message, Style.SUCCESS));
-    }
-
-    public static void warning(String message) {
-        System.out.println(style(message, Style.WARNING));
-    }
-
-    public static void title(String text) {
-        System.out.println(style(text, Style.TITLE));
-    }
-
-    public static void hint(String text) {
-        System.out.println(style(text, Style.HINT));
     }
 }

@@ -28,20 +28,20 @@ public class Authentication {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             String entered = InputHelper.readPassword("Enter " + roleName + " password (or C to cancel): ");
             if (entered.equalsIgnoreCase(InputHelper.CANCEL)) {
-                Terminal.notice(Terminal.Style.WARNING, "Login cancelled. Returning to Main Menu...");
+                Terminal.notice("Login cancelled. Returning to Main Menu...");
                 return false;
             }
             if (entered.equals(correctPassword)) {
-                Terminal.notice(Terminal.Style.SUCCESS, "Access granted. Welcome, " + roleName + "!");
+                Terminal.notice("Access granted. Welcome, " + roleName + "!");
                 return true;
             }
             int attemptsLeft = MAX_ATTEMPTS - attempt;
             if (attemptsLeft > 0) {
-                Terminal.error("Incorrect password for " + roleName + ". " + attemptsLeft
+                System.out.println("Incorrect password for " + roleName + ". " + attemptsLeft
                         + (attemptsLeft == 1 ? " attempt" : " attempts") + " left.");
             }
         }
-        Terminal.notice(Terminal.Style.ERROR, MAX_ATTEMPTS + " incorrect password attempts for " + roleName
+        Terminal.notice(MAX_ATTEMPTS + " incorrect password attempts for " + roleName
                 + ". Returning to Main Menu...");
         return false;
     }

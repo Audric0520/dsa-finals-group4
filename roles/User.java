@@ -46,10 +46,10 @@ public abstract class User {
             Terminal.newScreen();
             printMenu();
             System.out.println();
-            Terminal.hint(getStatusLine());
+            System.out.println(getStatusLine());
             int choice = InputHelper.readMenuChoice(getLastOption());
             if (choice == 0) {
-                Terminal.notice(Terminal.Style.SUCCESS, getRoleName() + " logged out.");
+                Terminal.notice(getRoleName() + " logged out.");
                 return;
             }
             try {
@@ -57,8 +57,7 @@ public abstract class User {
                 Terminal.pause();
             } catch (OperationCancelledException e) {
                 // The user typed C somewhere in the operation; nothing was saved.
-                Terminal.notice(Terminal.Style.WARNING,
-                        "Operation cancelled. Returning to " + getRoleName() + " Menu...");
+                Terminal.notice(e.getMessage() + " Returning to " + getRoleName() + " Menu...");
             }
         }
     }
@@ -90,7 +89,7 @@ public abstract class User {
 
     public void searchProducts() {
         if (inventory.isEmpty()) {
-            Terminal.warning("The inventory is empty. Nothing to search.");
+            System.out.println("The inventory is empty. Nothing to search.");
             return;
         }
         System.out.println("\nSearch by:");
@@ -102,7 +101,7 @@ public abstract class User {
             String id = InputHelper.readProductId("Enter product ID (or C to cancel): ");
             Product found = SearchAlgorithms.binarySearchById(inventory.getProducts(), id);
             if (found == null) {
-                Terminal.error("No product found with ID " + id + ".");
+                System.out.println("No product found with ID " + id + ".");
             } else {
                 ArrayList<Product> result = new ArrayList<>();
                 result.add(found);
@@ -112,7 +111,7 @@ public abstract class User {
             String keyword = InputHelper.readText("Enter flavor keyword (or C to cancel): ");
             ArrayList<Product> matches = SearchAlgorithms.linearSearchByFlavor(inventory.getProducts(), keyword);
             if (matches.isEmpty()) {
-                Terminal.error("No product flavor contains \"" + keyword + "\".");
+                System.out.println("No product flavor contains \"" + keyword + "\".");
             } else {
                 Inventory.displayProducts("SEARCH RESULTS (flavor contains \"" + keyword + "\") - "
                         + matches.size() + " found", matches);
@@ -127,7 +126,7 @@ public abstract class User {
      */
     public void sortProducts() {
         if (inventory.isEmpty()) {
-            Terminal.warning("The inventory is empty. Nothing to sort.");
+            System.out.println("The inventory is empty. Nothing to sort.");
             return;
         }
         System.out.println("\nSort products by:");
@@ -150,7 +149,7 @@ public abstract class User {
         String key = byQuantity ? "quantity" : "price";
         String order = ascending ? "lowest to highest" : "highest to lowest";
         System.out.println();
-        Terminal.success("Sorting complete: products sorted by " + key + " (" + order + ") using Insertion Sort.");
+        System.out.println("Sorting complete: products sorted by " + key + " (" + order + ") using Insertion Sort.");
         Inventory.displayProducts("SORTED PRODUCTS (" + key + ", " + order + ")", sorted);
     }
 }

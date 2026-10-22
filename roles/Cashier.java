@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import console.InputHelper;
-import console.Terminal;
+import console.OperationCancelledException;
 import models.Inventory;
 import models.Order;
 import models.OrderItem;
@@ -30,7 +30,7 @@ public class Cashier extends User {
 
     @Override
     protected void printMenu() {
-        Terminal.title("========== CASHIER MENU ==========");
+        System.out.println("========== CASHIER MENU ==========");
         System.out.println("[1] View inventory");
         System.out.println("[2] Search products");
         System.out.println("[3] Sort products");
@@ -78,113 +78,131 @@ public class Cashier extends User {
     }
 
     /**
-     * Builds one customer order that may contain several products.
-     * The items are kept in an ArrayDeque used as a stack, so U (undo) removes the
-     * most recently added item (LIFO). Nothing is queued until D (done),
-     * so cancelling with C leaves the stock and the queue unchanged.
+     * Builds one customer order that may contain several products, at an "order>" prompt
+     * that works like a small shell: a product ID (with an optional quantity) adds an item,
+     * and the words done, undo and cancel finish, undo or discard (D, U and C also work).
+     *
+     * The items are kept in an ArrayDeque used as a stack, so undo removes the most recently
+     * added item (LIFO). Nothing is queued until done, so cancelling leaves the stock and
+     * the queue unchanged.
      */
     private void addNewOrder() {
         if (inventory.isEmpty()) {
-            Terminal.warning("The inventory is empty. No orders can be made.");
+            System.out.println("The inventory is empty. No orders can be made.");
             return;
         }
         System.out.println();
-        Terminal.title("--- New Customer Order ---");
-        System.out.println("How to enter an order:");
-        System.out.println("  - Type a product ID (e.g. IC001) to add that product to the order.");
-        System.out.println("    To skip the quantity question, type the quantity after it (e.g. IC001 2).");
-        System.out.println("  - Type D when the order is complete to send it to the queue.");
-        System.out.println("  - Type U to remove the last product you added.");
-        System.out.println("  - Type C to cancel the whole order.");
+        System.out.println("--- New Customer Order ---");
+        System.out.println("Type a product ID (and quantity, e.g. IC001 2) to add it,");
+        System.out.println("or one of: done, undo, cancel");
         ArrayDeque<OrderItem> cart = new ArrayDeque<>();
 
         while (true) {
-            String input = InputHelper.readText(
-                    "\nEnter product ID to add (D = Done, U = Undo last item, C = Cancel order): ").toUpperCase();
-            if (input.equals("D")) {
-                if (cart.isEmpty()) {
-                    Terminal.error("The order is still empty. Add at least one product, or type C to cancel.");
-                    continue;
-                }
-                break;
+            String input = InputHelper.readLine("order> ");
+            String command = input.toLowerCase();
+            if (input.isEmpty()) {
+                continue; // like a shell, Enter alone just shows the prompt again
             }
-            if (input.equals("U")) {
+            if (command.equals("done") || command.equals("d")) {
+                if (!cart.isEmpty()) {
+                    break;
+                }
+                System.out.println("The order is still empty. Add a product first, or type cancel.");
+            } else if (command.equals("undo") || command.equals("u")) {
                 if (cart.isEmpty()) {
-                    Terminal.error("There is nothing to undo. The order is still empty.");
+                    System.out.println("There is nothing to undo. The order is still empty.");
                 } else {
-                    Terminal.warning("Removed from order: " + cart.pop());
-                    printOrderSoFar(cart);
+                    System.out.println("Removed " + cart.pop() + " | Total: " + formatTotal(cart));
                 }
-                continue;
+            } else if (command.equals("cancel") || command.equals("c")) {
+                confirmCancel(cart);
+            } else {
+                addItemToCart(cart, input);
             }
-            // "IC001" or "IC001 2": the product ID, optionally followed by the quantity
-            String[] parts = input.split("\\s+");
-            if (parts.length > 2) {
-                Terminal.error("\"" + input + "\" is not valid. Type a product ID like IC001 (or IC001 2), or D, U or C.");
-                continue;
-            }
-            addItemToCart(cart, parts[0], parts.length == 2 ? parts[1] : null);
         }
 
         Order order = iceCreamMaker.placeOrder(toListInOrderAdded(cart));
         if (order == null) {
-            Terminal.error("The order could not be placed because there is not enough stock.");
+            System.out.println("The order could not be placed because there is not enough stock.");
         } else {
-            Terminal.success("Order added to the queue: " + order);
-            System.out.println("Orders waiting: " + iceCreamMaker.getPendingOrders().size());
+            System.out.printf("Order %s added to the queue. Total: P%.2f%n", order.getOrderId(), order.getTotal());
+            for (OrderItem item : order.getItems()) {
+                System.out.println("    - " + item);
+            }
         }
     }
 
-    /** quantityText is the quantity typed after the ID, or null to ask for it. */
-    private void addItemToCart(ArrayDeque<OrderItem> cart, String productId, String quantityText) {
-        if (!InputHelper.isValidProductId(productId)) {
-            Terminal.error("\"" + productId + "\" is not valid. Type a product ID like IC001 (or IC001 2), or D, U or C.");
+    // Losing a long order to one mistyped letter would mean asking the customer again, so ask first.
+    private void confirmCancel(ArrayDeque<OrderItem> cart) {
+        if (cart.isEmpty() || InputHelper.confirm("Discard this order (" + describe(cart) + ")?", false)) {
+            throw new OperationCancelledException("Order discarded.");
+        }
+        System.out.println("Order kept.");
+    }
+
+    /** input is "IC001" or "IC001 2": the product ID, optionally followed by the quantity. */
+    private void addItemToCart(ArrayDeque<OrderItem> cart, String input) {
+        String[] parts = input.toUpperCase().split("\\s+");
+        if (parts.length > 2 || !InputHelper.isValidProductId(parts[0])) {
+            System.out.println("\"" + input + "\" is not a product ID or a command. Type a product ID like IC001"
+                    + " (or IC001 2), or done, undo, cancel.");
             return;
         }
+        String productId = parts[0];
         Product product = inventory.findById(productId);
         if (product == null) {
-            Terminal.error("No product found with ID " + productId + ".");
+            System.out.println("No product found with ID " + productId + ".");
+            return;
+        }
+        if (product.getQuantity() == 0) {
+            System.out.println(product.getFlavor() + " (" + productId + ") is out of stock.");
             return;
         }
         // Stock not already needed by pending orders or by this order so far
         int available = iceCreamMaker.getAvailableQuantity(product) - quantityInCart(cart, product);
-        if (product.getQuantity() == 0) {
-            Terminal.error(product.getFlavor() + " (" + productId + ") is out of stock.");
-            return;
-        }
         if (available <= 0) {
-            Terminal.error(product.getFlavor() + " (" + productId + ") has no stock left for new orders"
+            System.out.println(product.getFlavor() + " (" + productId + ") has no stock left for new orders"
                     + " (in stock: " + product.getQuantity() + ", reserved by pending orders: "
                     + iceCreamMaker.getPendingQuantity(product) + ", already in this order: "
                     + quantityInCart(cart, product) + ").");
             return;
         }
         int quantity;
-        if (quantityText == null) {
-            quantity = InputHelper.readInt("How many " + product.getFlavor() + " (" + productId + ")? Enter 1-"
-                    + available + " (or C to cancel the order): ", 1, available);
+        if (parts.length == 1) {
+            try {
+                quantity = InputHelper.readInt("How many " + product.getFlavor() + " (" + productId + ")? [1-"
+                        + available + "] (or C to skip): ", 1, available);
+            } catch (OperationCancelledException e) {
+                // C here only skips this product; the rest of the order is kept
+                System.out.println(product.getFlavor() + " not added.");
+                return;
+            }
         } else {
-            Integer typed = InputHelper.parseIntInRange(quantityText, 1, available);
+            Integer typed = InputHelper.parseIntInRange(parts[1], 1, available);
             if (typed == null) {
-                Terminal.error("Quantity for " + product.getFlavor() + " (" + productId + ") must be a whole number"
-                        + " from 1 to " + available + ". Nothing was added.");
+                System.out.println("Quantity for " + product.getFlavor() + " (" + productId + ") must be a whole"
+                        + " number from 1 to " + available + ". Nothing was added.");
                 return;
             }
             quantity = typed;
         }
         OrderItem item = new OrderItem(product, quantity);
         cart.push(item);
-        Terminal.success("Added to order: " + item);
-        printOrderSoFar(cart);
+        System.out.println("Added " + item + " | Total: " + formatTotal(cart));
     }
 
     // The running total lets the cashier tell the customer the amount at any time.
-    private void printOrderSoFar(ArrayDeque<OrderItem> cart) {
+    private static String formatTotal(ArrayDeque<OrderItem> cart) {
         double total = 0;
         for (OrderItem item : cart) {
             total += item.getSubtotal();
         }
-        System.out.printf("Items in this order: %d | Running total: P%.2f%n", cart.size(), total);
+        return String.format("P%.2f", total);
+    }
+
+    // e.g. "2 items, P155.00"
+    private static String describe(ArrayDeque<OrderItem> cart) {
+        return cart.size() + (cart.size() == 1 ? " item, " : " items, ") + formatTotal(cart);
     }
 
     // Stock already placed in this order for the same product, so it cannot be over-ordered.

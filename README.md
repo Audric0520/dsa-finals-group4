@@ -12,7 +12,7 @@ It is written in plain Java with no external libraries.
 | Sorting | **Sort products** asks for the key (`1` = Quantity, `2` = Price) and the order (`1` = Ascending, `2` = Descending). It then sorts with Insertion Sort and shows the result with a confirmation. There is no algorithm menu, and the behaviour is the same for every role. |
 | Quantity limit | A new product must start with **1 to 100** in stock. This is checked at input and in `Inventory.addProduct`. When updating an existing product, 0-100 is allowed, because a product can be sold out. |
 | Product tables | View, search and sort all print the same titled table. The header and rows share one format (`Product.TABLE_ROW_FORMAT`), so the columns always line up. |
-| Order entry prompts | The cashier sees short instructions first. Each prompt then says what to type: `Enter product ID to add (D = Done, U = Undo last item, C = Cancel order)`. Typing the quantity after the ID (`IC001 2`) adds an item in one step, and a running total is shown after every change. |
+| Order entry prompts | The cashier types at an `order>` prompt, like a small shell. A product ID adds an item (`IC001`, or `IC001 2` with the quantity in one step), and the words `done`, `undo` and `cancel` finish, undo or discard the order (`D`, `U` and `C` also work). Two lines above the prompt explain this, and a running total is shown after every change. |
 | Orders | The **Cashier** enters customer orders (one or more products) and views pending orders. The **Ice Cream Maker** views and processes orders (FIFO). |
 | Menus | All three menus match the required layout and order. `[0]` is always Log out. |
 | Cancel input | Typing `C` at any prompt inside an operation cancels it and returns to the role menu, without saving partial data. |
@@ -39,7 +39,7 @@ It is written in plain Java with no external libraries.
   - **Placing an order:** it is accepted only if the *available* stock covers it. Available stock is the current stock minus everything already in pending orders, so the queue never promises more than exists.
   - **Viewing the inventory:** because pending orders are not yet subtracted, *View inventory* lists the stock they have reserved under the table (`IC005 Strawberry: 15 reserved, 0 left for new orders`). The table and the cashier's "no stock left" message therefore never contradict each other.
   - **Processing an order:** stock is checked again, in case the Manager lowered it in the meantime. If there is not enough, the order stays at the front of the queue, nothing is deducted, and the message lists each item that is short.
-  - **Backing out:** the cashier can still cancel an order with `C` while entering it. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
+  - **Backing out:** the cashier can still cancel an order while entering it. On an order that already has items, `cancel` (or `C`) first asks `Discard this order (2 items, P155.00)? [y/N]`, so one mistyped letter cannot lose a long order; `C` at the "How many?" question skips only that product. The Manager cannot remove a product that is part of a pending order, so a queued order never points to a missing product.
 - **An order line is a record of the sale.** `OrderItem` copies the product's flavor, serving size, container and price when the order is taken, like a printed receipt. A pending order's items and total therefore stay exactly as the customer ordered them, whatever the Manager edits later.
 - **Product edits while an order is pending.** `Manager.updateProduct` checks the queue (`IceCreamMaker.getPendingOrderIdsFor`) first:
 
@@ -63,18 +63,17 @@ It is written in plain Java with no external libraries.
 - **HashMap** maps ID to product. It gives O(1) lookups for update, remove and orders, and it detects duplicate IDs. The **ArrayList** stores the product records.
 - **Order IDs** are readable and unique: `ORD-001`, `ORD-002`, and so on.
 - **Product `IceCream` was renamed to `Product`** to match the specification.
-- **One class talks to the terminal.** `Terminal` does all reading, screen clearing and colouring. The rest of the program only asks it to read a line, show a message or start a new screen, so the terminal behaviour is decided in one place.
+- **One class talks to the terminal.** `Terminal` does all reading, and screen clearing. The rest of the program only asks it to read a line, show a message or start a new screen, so the terminal behaviour is decided in one place.
 
 ## 3. Terminal Behaviour
 
-When it starts, the program checks what it is connected to (`System.console()`), the same way real command-line tools decide whether to use colours or pause for input.
+When it starts, the program checks what it is connected to (`System.console()`), the same way real command-line tools decide whether to clear the screen or pause for input.
 
 | | Interactive mode (a real terminal window) | Plain mode (input from a file or pipe, an IDE console, or `--plain`) |
 |---|---|---|
 | Passwords | Visible while typed, like any other answer | A password read from a file is not copied into the output, so the saved output never contains one |
 | Screens | Each menu starts on a cleared screen; results stay up until **Enter** is pressed | Plain scrolling output, no pauses |
 | Answers | Shown by the terminal as they are typed | Answers read from a file or pipe are printed after their prompt, so the saved output reads like a real session. Answers typed in an IDE console are not printed again, because the IDE already shows them |
-| Colours | Errors red, successes green, warnings yellow, titles cyan, status lines dimmed, sold-out table rows red | None, so the output can be saved and compared |
 
 The rest works the same in both modes:
 
@@ -83,8 +82,8 @@ The rest works the same in both modes:
 - **Yes/no questions have a default**, shown by the capital letter: `Process this order? [Y/n]` (Enter = yes) and `Remove this product? [y/N]` (Enter = no, because removing cannot be undone).
 - **Messages that would be cleared away stay visible.** "Access granted", "Cashier logged out" or "Operation cancelled" appear just above the next menu prompt instead of disappearing with the screen.
 - **Exiting with pending orders asks first.** Orders are kept only in memory, so `[0] Exit` warns how many would be lost and asks `Exit anyway? [y/N]`.
-- **End of input and Ctrl+C exit cleanly.** Ctrl+D (macOS/Linux) or Ctrl+Z then Enter (Windows) ends the program, and Ctrl+C restores the terminal's normal colours before quitting.
-- **Colours are used only where they work.** On macOS/Linux and in Windows Terminal, VS Code and Git Bash the program uses colours and escape codes. In the classic Windows console it skips them (they would show up as `←[31m`) and clears the screen with `cls` instead. The common `NO_COLOR` environment variable turns colours off.
+- **End of input and Ctrl+C exit cleanly.** Ctrl+D (macOS/Linux) or Ctrl+Z then Enter (Windows) ends the program and Ctrl+C quits.
+- **The screen is cleared in the way the terminal supports.** Modern terminals (macOS/Linux, Windows Terminal, VS Code, Git Bash) get an escape code; the classic Windows console, which would show escape codes as garbage, is cleared with `cls` instead.
 
 ## 4. Project Structure
 
@@ -107,7 +106,7 @@ dsa-finals-group4/
 │   ├── SortAlgorithms.java              Insertion Sort, Merge Sort, Quick Sort
 │   └── SearchAlgorithms.java            Linear Search, Binary Search
 └── console/                             reading input and controlling the terminal
-    ├── Terminal.java                    terminal detection, screens, colours
+    ├── Terminal.java                    terminal detection, screens, input
     ├── InputHelper.java                 validated console input with C to cancel
     └── OperationCancelledException.java thrown when the user types C
 ```
@@ -137,15 +136,14 @@ Options:
 
 | Option | Effect |
 |---|---|
-| `--plain` | Plain scrolling output: no screen clearing, no pauses, no colours |
-| `--no-color` | Turns colours off only (setting the `NO_COLOR` environment variable does the same) |
+| `--plain` | Plain scrolling output: no screen clearing and no pauses |
 | `-h`, `--help` | Shows the options and exits |
 
 An unknown option prints the usage to standard error and exits with code 2.
 
 A session can also be replayed from a text file with one answer per line, for example `java -cp out Main < session.txt`. The answers are printed after their prompts, so the output reads like the real session.
 
-> IDE run consoles, and Git Bash in its default setup, do not give Java a real console, so the program runs in plain mode there (no screen clearing or colours). For the full interactive mode, use Windows Terminal, PowerShell, `cmd`, or a macOS/Linux terminal.
+> IDE run consoles, and Git Bash in its default setup, do not give Java a real console, so the program runs in plain mode there (no screen clearing or pauses). For the full interactive mode, use Windows Terminal, PowerShell, `cmd`, or a macOS/Linux terminal.
 
 ## 7. Scenario Testing and Sample Output
 
@@ -161,6 +159,7 @@ Realistic shop sessions were replayed against the program, one answer per line, 
 | Prices `1e2`, `45.999`, `119.996`, `120.004`, `P45` | `1e2` read as P100.00; `119.996` rounded up to P120.00 while `120.004` was rejected; `P45` rejected | Only plain amounts with at most 2 decimals; a leading `P` is accepted |
 | Flavor typed as `  mint choco  ` | Saved in lower case, unlike the other flavors | Saved as `Mint Choco` |
 | Cashier adds IC001 twice in one order | Two separate lines for the same product | One line, `5x IC001` |
+| Cashier types C halfway through a long order, or at the "How many?" question | The whole order was discarded at once, with no question | `Discard this order (2 items, P155.00)? [y/N]` first; `C` at "How many?" skips only that product |
 | Selling a product with 0 stock | "has no more stock available" message listing zeros | `Cookies and Cream (IC004) is out of stock.` |
 | Removing a product in several pending orders | Message did not say which orders | `Cannot remove IC001: it is part of pending orders ORD-001, ORD-002.` |
 
@@ -170,7 +169,7 @@ Sample output from these sessions:
 
 **Editing a product that is in a pending order**
 ```
-Order added to the queue: ORD-001 | Total: P90.00
+Order ORD-001 added to the queue. Total: P90.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
 ...
 Field to update [1-5] (or C to cancel): 4
@@ -249,22 +248,30 @@ Enter Cashier password (or C to cancel):
 3 incorrect password attempts for Cashier. Returning to Main Menu...
 ```
 
-**Order entry (running total, one-step entry, repeated product merged)**
+**Order entry (`order>` prompt, running total, skip, undo, confirmed cancel, repeated product merged)**
 ```
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001 2
-Added to order: 2x IC001 Vanilla (S, Cone) = P90.00
-Items in this order: 1 | Running total: P90.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC003 1
-Added to order: 1x IC003 Chocolate (M, Cup) = P65.00
-Items in this order: 2 | Running total: P155.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): IC001 3
-Added to order: 3x IC001 Vanilla (S, Cone) = P135.00
-Items in this order: 3 | Running total: P290.00
-
-Enter product ID to add (D = Done, U = Undo last item, C = Cancel order): D
-Order added to the queue: ORD-001 | Total: P290.00
+--- New Customer Order ---
+Type a product ID (and quantity, e.g. IC001 2) to add it,
+or one of: done, undo, cancel
+order> IC001 2
+Added 2x IC001 Vanilla (S, Cone) = P90.00 | Total: P90.00
+order> IC003
+How many Chocolate (IC003)? [1-40] (or C to skip): C
+Chocolate not added.
+order> IC003
+How many Chocolate (IC003)? [1-40] (or C to skip): 1
+Added 1x IC003 Chocolate (M, Cup) = P65.00 | Total: P155.00
+order> IC001 3
+Added 3x IC001 Vanilla (S, Cone) = P135.00 | Total: P290.00
+order> undo
+Removed 3x IC001 Vanilla (S, Cone) = P135.00 | Total: P155.00
+order> cancel
+Discard this order (2 items, P155.00)? [y/N]:
+Order kept.
+order> IC001 3
+Added 3x IC001 Vanilla (S, Cone) = P135.00 | Total: P290.00
+order> done
+Order ORD-001 added to the queue. Total: P290.00
     - 5x IC001 Vanilla (S, Cone) = P225.00
     - 1x IC003 Chocolate (M, Cup) = P65.00
 ```
@@ -312,7 +319,7 @@ Orders still waiting: 2
 | Sort products: choose quantity or price, then ascending or descending; Insertion Sort; no algorithm menu; all roles | `User.sortProducts` | ✅ |
 | New product quantity must be 1-100 | `Manager.addProduct`, `Inventory.addProduct` | ✅ |
 | Search results shown in an aligned, titled table | `Inventory.displayProducts`, `Product.TABLE_ROW_FORMAT` | ✅ |
-| Clear order-entry instructions and prompts, one-step `IC001 2` entry, running total | `Cashier.addNewOrder` | ✅ |
+| Clear order-entry instructions; `order>` prompt with `done`, `undo`, `cancel`; one-step `IC001 2` entry; running total; confirmation before discarding | `Cashier.addNewOrder` | ✅ |
 | Manager menu (exact layout, `[0]` = Log out) | `Manager.printMenu` | ✅ |
 | Cashier menu (exact layout) | `Cashier.printMenu` | ✅ |
 | Main menu order: Cashier, Ice Cream Maker, Manager, Exit | `Main.main` | ✅ |
@@ -337,7 +344,7 @@ Orders still waiting: 2
 | Binary Search on a list sorted by the same key | `SearchAlgorithms.binarySearchById` | ✅ |
 | No built-in sort or search replacing the required algorithms | Only hand-written algorithms are used | ✅ |
 | Standard Java, console only, no external libraries | All files | ✅ |
-| Terminal-aware behaviour: cleared screens, pauses and colours in a real terminal; plain, replayable output otherwise | `Terminal` | ✅ |
+| Terminal-aware behaviour: cleared screens and pauses in a real terminal; plain, replayable output otherwise | `Terminal` | ✅ |
 | Source files grouped by purpose into packages (`roles`, `models`, `algorithms`, `console`) | project folders | ✅ |
 | Status line under each role menu | `User.showMenu`, each role's `getStatusLine` | ✅ |
 | `[Y/n]` / `[y/N]` defaults; warning before exiting with pending orders | `InputHelper.readYesNo`, `Main.confirmExit` | ✅ |

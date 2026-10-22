@@ -9,6 +9,11 @@ public class OperationCancelledException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
     public OperationCancelledException() {
-        super("Operation cancelled by the user.");
+        this("Operation cancelled.");
+    }
+
+    /** message is shown to the user, e.g. "Order discarded." */
+    public OperationCancelledException(String message) {
+        super(message);
     }
 }

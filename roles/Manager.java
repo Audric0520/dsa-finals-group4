@@ -1,7 +1,6 @@
 package roles;
 
 import console.InputHelper;
-import console.Terminal;
 import models.Inventory;
 import models.Product;
 
@@ -23,7 +22,7 @@ public class Manager extends User {
 
     @Override
     protected void printMenu() {
-        Terminal.title("========== MANAGER MENU ==========");
+        System.out.println("========== MANAGER MENU ==========");
         System.out.println("[1] View inventory");
         System.out.println("[2] Sort products");
         System.out.println("[3] Search products");
@@ -82,10 +81,10 @@ public class Manager extends User {
      */
     private void addProduct() {
         System.out.println();
-        Terminal.title("--- Add Product (enter C at any prompt to cancel) ---");
+        System.out.println("--- Add Product (enter C at any prompt to cancel) ---");
         String id = InputHelper.readProductId("Enter product ID, e.g. IC006 (or C to cancel): ");
         if (inventory.containsId(id)) {
-            Terminal.error("A product with ID " + id + " already exists. Product not added.");
+            System.out.println("A product with ID " + id + " already exists. Product not added.");
             return;
         }
         String flavor = InputHelper.readFlavor("Flavor: ");
@@ -93,7 +92,7 @@ public class Manager extends User {
         String container = InputHelper.readContainerType("Container type (cone/cup): ");
         Product same = inventory.findSameProduct(flavor, size, container, null);
         if (same != null) {
-            Terminal.error(flavor + " (" + size + ", " + container + ") already exists as " + same.getProductId()
+            System.out.println(flavor + " (" + size + ", " + container + ") already exists as " + same.getProductId()
                     + ". Update " + same.getProductId() + " instead. Product not added.");
             return;
         }
@@ -103,22 +102,22 @@ public class Manager extends User {
                 Product.MAX_PRICE));
 
         if (inventory.addProduct(new Product(id, flavor, size, quantity, price, container))) {
-            Terminal.success("Product " + id + " added successfully.");
+            System.out.println("Product " + id + " added successfully.");
         } else {
-            Terminal.error("Product could not be added.");
+            System.out.println("Product could not be added.");
         }
     }
 
     /** Asks for an ID and returns the product, or null (with a message) if it does not exist. */
     private Product askForExistingProduct() {
         if (inventory.isEmpty()) {
-            Terminal.warning("The inventory is empty.");
+            System.out.println("The inventory is empty.");
             return null;
         }
         String id = InputHelper.readProductId("Enter product ID (or C to cancel): ");
         Product product = inventory.findById(id);
         if (product == null) {
-            Terminal.error("No product found with ID " + id + ".");
+            System.out.println("No product found with ID " + id + ".");
         }
         return product;
     }
@@ -133,7 +132,7 @@ public class Manager extends User {
      */
     private void updateProduct() {
         System.out.println();
-        Terminal.title("--- Update Product Details ---");
+        System.out.println("--- Update Product Details ---");
         Product product = askForExistingProduct();
         if (product == null) {
             return;
@@ -150,7 +149,7 @@ public class Manager extends User {
 
         if ((field == 1 || field == 2 || field == 5) && !pendingOrders.isEmpty()) {
             String fieldName = field == 1 ? "flavor" : field == 2 ? "serving size" : "container type";
-            Terminal.error("Cannot change the " + fieldName + " of " + id + ": it is part of "
+            System.out.println("Cannot change the " + fieldName + " of " + id + ": it is part of "
                     + describeOrders(pendingOrders) + ". Process " + itOrThem(pendingOrders)
                     + " first, so the customer gets what they ordered.");
             return;
@@ -191,9 +190,9 @@ public class Manager extends User {
                 product.setContainerType(container);
                 break;
         }
-        Terminal.success("Product updated: " + product);
+        System.out.println("Product updated: " + product);
         if (field == 4 && !pendingOrders.isEmpty()) {
-            Terminal.warning("Note: " + describeOrders(pendingOrders)
+            System.out.println("Note: " + describeOrders(pendingOrders)
                     + (isPlural(pendingOrders) ? " keep the price they were" : " keeps the price it was")
                     + " ordered at. The new price applies to new orders.");
         }
@@ -205,7 +204,7 @@ public class Manager extends User {
         if (same == null) {
             return false;
         }
-        Terminal.error("That would make " + product.getProductId() + " the same item as " + same.getProductId()
+        System.out.println("That would make " + product.getProductId() + " the same item as " + same.getProductId()
                 + " (" + flavor + ", " + size + ", " + container + "). Product not updated.");
         return true;
     }
@@ -216,14 +215,14 @@ public class Manager extends User {
         if (newQuantity >= reserved) {
             return true;
         }
-        Terminal.warning("The " + describeOrders(pendingOrders) + (isPlural(pendingOrders) ? " need " : " needs ")
+        System.out.println("The " + describeOrders(pendingOrders) + (isPlural(pendingOrders) ? " need " : " needs ")
                 + reserved + " of " + product.getProductId() + ". With only " + newQuantity
                 + " in stock, the Ice Cream Maker cannot process " + itOrThem(pendingOrders)
                 + " until the product is restocked.");
         if (InputHelper.readYesNo("Set the stock to " + newQuantity + " anyway?", false)) {
             return true;
         }
-        Terminal.warning("Quantity not changed.");
+        System.out.println("Quantity not changed.");
         return false;
     }
 
@@ -242,14 +241,14 @@ public class Manager extends User {
 
     private void removeProduct() {
         System.out.println();
-        Terminal.title("--- Remove Product ---");
+        System.out.println("--- Remove Product ---");
         Product product = askForExistingProduct();
         if (product == null) {
             return;
         }
         String pendingOrders = iceCreamMaker.getPendingOrderIdsFor(product.getProductId());
         if (!pendingOrders.isEmpty()) {
-            Terminal.error("Cannot remove " + product.getProductId() + ": it is part of "
+            System.out.println("Cannot remove " + product.getProductId() + ": it is part of "
                     + describeOrders(pendingOrders) + ". Process " + itOrThem(pendingOrders) + " first.");
             return;
         }
@@ -257,9 +256,9 @@ public class Manager extends User {
         // Removing cannot be undone, so pressing Enter alone answers No
         if (InputHelper.readYesNo("Remove this product?", false)) {
             inventory.removeProduct(product.getProductId());
-            Terminal.success("Product " + product.getProductId() + " removed.");
+            System.out.println("Product " + product.getProductId() + " removed.");
         } else {
-            Terminal.warning("Product was not removed.");
+            System.out.println("Product was not removed.");
         }
     }
 }

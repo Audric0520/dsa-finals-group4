@@ -19,14 +19,10 @@ public class Main {
 
     public static void main(String[] args) {
         boolean plain = false;
-        boolean noColor = false;
         for (String arg : args) {
             switch (arg) {
                 case "--plain":
                     plain = true;
-                    break;
-                case "--no-color":
-                    noColor = true;
                     break;
                 case "-h":
                 case "--help":
@@ -38,7 +34,7 @@ public class Main {
                     System.exit(2);
             }
         }
-        Terminal.init(plain, noColor);
+        Terminal.init(plain);
 
         Inventory inventory = new Inventory();
         loadSampleProducts(inventory);
@@ -49,9 +45,9 @@ public class Main {
 
         while (true) {
             Terminal.newScreen();
-            Terminal.title("========================================");
-            Terminal.title("    SC ICE CREAM MANAGEMENT SYSTEM");
-            Terminal.title("========================================");
+            System.out.println("========================================");
+            System.out.println("    SC ICE CREAM MANAGEMENT SYSTEM");
+            System.out.println("========================================");
             System.out.println("[1] Cashier");
             System.out.println("[2] Ice Cream Maker");
             System.out.println("[3] Manager");
@@ -79,7 +75,7 @@ public class Main {
         if (pending == 0) {
             return true;
         }
-        Terminal.warning(pending + (pending == 1 ? " order is" : " orders are")
+        System.out.println(pending + (pending == 1 ? " order is" : " orders are")
                 + " still pending and will be lost when the program closes.");
         try {
             return InputHelper.readYesNo("Exit anyway?", false);
@@ -92,8 +88,7 @@ public class Main {
         out.println("Usage: java -cp out Main [options]");
         out.println();
         out.println("Options:");
-        out.println("  --plain      plain scrolling output: no screen clearing, no pauses, no colours");
-        out.println("  --no-color   turn colours off (setting the NO_COLOR environment variable does the same)");
+        out.println("  --plain      plain scrolling output: no screen clearing and no pauses");
         out.println("  -h, --help   show this help and exit");
         out.println();
         out.println("At any menu, q, quit or exit work the same as [0].");
