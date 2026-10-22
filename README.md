@@ -288,7 +288,7 @@ Sort order:
 [2] Descending (highest to lowest)
 Choice [1-2] (or C to cancel): 2
 
-Sorting complete: products sorted by quantity (highest to lowest) using Insertion Sort.
+Sorting complete: products sorted by quantity (highest to lowest)
 ```
 
 **FIFO processing (Ice Cream Maker)**
