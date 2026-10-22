@@ -4,10 +4,13 @@ import java.util.Comparator;
 /**
  * Base class for the three roles.
  *
- * - showMenu() runs the menu loop for every role, so the loop and the cancel handling
- *   are written only once. Each role only says what its menu looks like (printMenu)
- *   and what each option does (handleChoice).
- * - View, search and sort are shared by every role, so they are written once here.
+ * - showMenu() runs the menu loop for every role, so the loop and the cancel
+ * handling
+ * are written only once. Each role only says what its menu looks like
+ * (printMenu)
+ * and what each option does (handleChoice).
+ * - View, search and sort are shared by every role, so they are written once
+ * here.
  */
 public abstract class User {
     protected final Inventory inventory;
@@ -56,8 +59,8 @@ public abstract class User {
             return;
         }
         System.out.println("\nSearch by:");
-        System.out.println("[1] Product ID (Binary Search)");
-        System.out.println("[2] Flavor keyword (Linear Search)");
+        System.out.println("[1] Product ID");
+        System.out.println("[2] Flavor keyword");
         int choice = InputHelper.readInt("Choice (or C to cancel): ", 1, 2);
 
         if (choice == 1) {
@@ -83,8 +86,10 @@ public abstract class User {
     }
 
     /**
-     * Asks what to sort by (quantity or price) and in which order, then sorts a copy
-     * of the inventory with Insertion Sort. Insertion Sort is stable, so products with
+     * Asks what to sort by (quantity or price) and in which order, then sorts a
+     * copy
+     * of the inventory with Insertion Sort. Insertion Sort is stable, so products
+     * with
      * the same value keep their original order.
      */
     public void sortProducts() {
@@ -111,7 +116,7 @@ public abstract class User {
 
         String key = byQuantity ? "quantity" : "price";
         String order = ascending ? "lowest to highest" : "highest to lowest";
-        System.out.println("\nSorting complete: products sorted by " + key + " (" + order + ") using Insertion Sort.");
+        System.out.println("\nSorting complete: products sorted by " + key + " (" + order + ")");
         Inventory.displayProducts("SORTED PRODUCTS (" + key + ", " + order + ")", sorted);
     }
 }
