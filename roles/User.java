@@ -95,13 +95,15 @@ public abstract class User {
             System.out.println("The inventory is empty. Nothing to search.");
             return;
         }
-        System.out.println("\nSearch by:");
+        System.out.println();
+        System.out.println("--- Search Products (enter C at any prompt to cancel) ---");
+        System.out.println("Search by:");
         System.out.println("[1] Product ID");
         System.out.println("[2] Flavor keyword");
-        int choice = InputHelper.readInt("Choice [1-2] (or C to cancel): ", 1, 2);
+        int choice = InputHelper.readInt("Choice [1-2]: ", 1, 2);
 
         if (choice == 1) {
-            String id = InputHelper.readProductId("Enter product ID (or C to cancel): ");
+            String id = InputHelper.readProductId("Enter product ID: ");
             Product found = SearchAlgorithms.binarySearchById(inventory.getProducts(), id);
             if (found == null) {
                 System.out.println("No product found with ID " + id + ".");
@@ -111,7 +113,7 @@ public abstract class User {
                 Inventory.displayProducts("SEARCH RESULT (product ID " + id + ")", result);
             }
         } else {
-            String keyword = InputHelper.readText("Enter flavor keyword (or C to cancel): ");
+            String keyword = InputHelper.readText("Enter flavor keyword: ");
             ArrayList<Product> matches = SearchAlgorithms.linearSearchByFlavor(inventory.getProducts(), keyword);
             if (matches.isEmpty()) {
                 System.out.println("No product flavor contains \"" + keyword + "\".");
@@ -134,15 +136,17 @@ public abstract class User {
             System.out.println("The inventory is empty. Nothing to sort.");
             return;
         }
-        System.out.println("\nSort products by:");
+        System.out.println();
+        System.out.println("--- Sort Products (enter C at any prompt to cancel) ---");
+        System.out.println("Sort by:");
         System.out.println("[1] Quantity");
         System.out.println("[2] Price");
-        boolean byQuantity = InputHelper.readInt("Choice [1-2] (or C to cancel): ", 1, 2) == 1;
+        boolean byQuantity = InputHelper.readInt("Choice [1-2]: ", 1, 2) == 1;
 
         System.out.println("\nSort order:");
         System.out.println("[1] Ascending (lowest to highest)");
         System.out.println("[2] Descending (highest to lowest)");
-        boolean ascending = InputHelper.readInt("Choice [1-2] (or C to cancel): ", 1, 2) == 1;
+        boolean ascending = InputHelper.readInt("Choice [1-2]: ", 1, 2) == 1;
 
         Comparator<Product> comparator = byQuantity ? SortAlgorithms.BY_QUANTITY : SortAlgorithms.BY_PRICE;
         if (!ascending) {

@@ -192,8 +192,7 @@ public class InputHelper {
     }
 
     private static boolean askYesNo(String question, boolean defaultAnswer, boolean allowCancel) {
-        String prompt = question + (defaultAnswer ? " [Y/n]" : " [y/N]") + (allowCancel ? " (or C to cancel)" : "")
-                + ": ";
+        String prompt = question + (defaultAnswer ? " [Y/n]: " : " [y/N]: ");
         while (true) {
             String answer = readLine(prompt).toUpperCase();
             if (allowCancel && answer.equals(CANCEL)) {
@@ -208,8 +207,7 @@ public class InputHelper {
             if (answer.equals("N") || answer.equals("NO")) {
                 return false;
             }
-            System.out.println("Please enter Y or N, " + (allowCancel ? "" : "or ") + "press Enter for "
-                    + (defaultAnswer ? "Y" : "N") + (allowCancel ? ", or type C to cancel." : "."));
+            System.out.println("Please enter Y or N, or press Enter for " + (defaultAnswer ? "Y" : "N") + ".");
         }
     }
 }

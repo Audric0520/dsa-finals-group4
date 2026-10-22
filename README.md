@@ -15,7 +15,7 @@ It is written in plain Java with no external libraries.
 | Order entry prompts | The cashier types at an `order>` prompt, like a small shell. A product ID adds an item (`IC001`, or `IC001 2` with the quantity in one step), and the words `done`, `undo` and `cancel` finish, undo or discard the order (`D`, `U` and `C` also work). Two lines above the prompt explain this, and a running total is shown after every change. |
 | Orders | The **Cashier** enters customer orders (one or more products) and views pending orders. The **Ice Cream Maker** views and processes orders (FIFO). |
 | Menus | All three menus match the required layout and order. `[0]` is always Log out. |
-| Cancel input | Typing `C` at any prompt inside an operation cancels it and returns to the role menu, without saving partial data. |
+| Cancel input | Typing `C` at any prompt inside an operation cancels it and returns to the role menu, without saving partial data. Each operation says this once in its title, e.g. `--- Remove Product (enter C at any prompt to cancel) ---`, so the prompts themselves stay short. |
 | Main menu | Roles are listed as `[1] Cashier`, `[2] Ice Cream Maker`, `[3] Manager`, `[0] Exit`. |
 | Order cancellation removed | The Ice Cream Maker's "Cancel an order" option was removed, as requested. Pending orders leave the queue only when they are processed. |
 | Terminal experience | The program behaves like a real terminal application: it detects whether a person is typing in a terminal or input is piped from a file, and adapts (see section 3). The menu layouts are unchanged. |
@@ -33,7 +33,7 @@ It is written in plain Java with no external libraries.
 
 **Product fields:** product ID (`IC###`), flavor, serving size (S/M/L), quantity in stock, price, and container type (Cone/Cup).
 
-- **Cancel mechanism.** Every input method in `InputHelper` (except menu choices, where `[0]` already means log out) throws `OperationCancelledException` when the user types `C`. `User.showMenu()` catches it in **one** place and prints `Operation cancelled. Returning to <Role> Menu...`. Because products and orders are saved only after the last input, a cancelled operation never leaves partial data behind. The password prompt handles `C` itself and returns to the Main Menu.
+- **Cancel mechanism.** Every input method in `InputHelper` (except menu choices, where `[0]` already means log out) throws `OperationCancelledException` when the user types `C`. `User.showMenu()` catches it in **one** place and prints `Operation cancelled. Returning to <Role> Menu...`. Because products and orders are saved only after the last input, a cancelled operation never leaves partial data behind. The password prompt handles `C` itself and returns to the Main Menu. The rule is stated once in each operation's title (and in the login title) rather than after every prompt.
 - **Shared menu loop.** `User.showMenu()` holds the loop, the `[0] Log out` handling and the cancel handling. Each role only defines `printMenu()` and `handleChoice()`, so none of this is duplicated.
 - **Stock policy: deduct on processing.** The inventory changes **only** when the Ice Cream Maker processes an order. Adding an order to the queue does not touch the stock.
   - **Placing an order:** it is accepted only if the *available* stock covers it. Available stock is the current stock minus everything already in pending orders, so the queue never promises more than exists.
@@ -45,7 +45,7 @@ It is written in plain Java with no external libraries.
 
   | Field | While the product is in a pending order |
   |---|---|
-  | Flavor, serving size, container | Blocked, naming the orders (`Cannot change the flavor of IC001: it is part of pending order ORD-001...`). Otherwise the Ice Cream Maker would make a different item from this stock. |
+  | Flavor, serving size, container | Locked. As soon as the product ID is entered, the Manager is told which pending orders lock these fields, and they are marked `(locked)` in the field list; choosing one explains why and asks again. Otherwise the Ice Cream Maker would make a different item from this stock. |
   | Price | Allowed. Pending orders keep the price they were taken at, and a note says so. |
   | Quantity | Allowed (for example after a recount). Going below what the pending orders need shows a warning and asks `Set the stock to 5 anyway? [y/N]`. |
 
@@ -172,13 +172,22 @@ Sample output from these sessions:
 Order ORD-001 added to the queue. Total: P90.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
 ...
-Field to update [1-5] (or C to cancel): 4
-New price P30.00-P120.00 (or C to cancel): P60
+--- Update Product Details (enter C at any prompt to cancel) ---
+Enter product ID: IC001
+Current: IC001  | Vanilla            | S    | Cone |    50 |   P45.00
+IC001 is part of pending order ORD-001, so its flavor, serving size and container type cannot change until it is processed (the customer gets what they ordered).
+Its quantity and price can still be updated.
+[1] Flavor (locked)
+[2] Serving size (locked)
+[3] Quantity in stock
+[4] Price
+[5] Container type (locked)
+Field to update [1-5]: 1
+Flavor is locked while pending order ORD-001 waits. Choose 3 (quantity) or 4 (price).
+Field to update [1-5]: 4
+New price (P30.00-P120.00): P60
 Product updated: IC001  | Vanilla            | S    | Cone |    50 |   P60.00
 Note: pending order ORD-001 keeps the price it was ordered at. The new price applies to new orders.
-...
-Field to update [1-5] (or C to cancel): 1
-Cannot change the flavor of IC001: it is part of pending order ORD-001. Process it first, so the customer gets what they ordered.
 ...
 --- Pending Orders (first = next to process) ---
 1. ORD-001 | Total: P90.00
@@ -187,9 +196,9 @@ Cannot change the flavor of IC001: it is part of pending order ORD-001. Process 
 
 **Lowering stock below what pending orders need**
 ```
-New quantity 0-100 (or C to cancel): 5
+New quantity (0-100): 5
 The pending order ORD-001 needs 10 of IC002. With only 5 in stock, the Ice Cream Maker cannot process it until the product is restocked.
-Set the stock to 5 anyway? [y/N] (or C to cancel): y
+Set the stock to 5 anyway? [y/N]: y
 Product updated: IC002  | Mango              | M    | Cone |     5 |   P60.00
 ...
 Next order: ORD-001 | Total: P600.00
@@ -217,13 +226,13 @@ Reserved for pending orders (subtracted when each order is processed):
 
 **Adding a product (duplicate check, quantity and price limits)**
 ```
-Enter product ID, e.g. IC006 (or C to cancel): IC008
+Enter product ID, e.g. IC006: IC008
 Flavor: vanilla
 Serving size (S/M/L): s
 Container type (cone/cup): cone
 Vanilla (S, Cone) already exists as IC001. Update IC001 instead. Product not added.
 ...
-Enter product ID, e.g. IC006 (or C to cancel): IC006
+Enter product ID, e.g. IC006: IC006
 Flavor: Ube
 Serving size (S/M/L): L
 Container type (cone/cup): cone
@@ -240,11 +249,12 @@ Product IC006 added successfully.
 
 **Authentication (3 attempts; a password read from a file is not copied into the output)**
 ```
-Enter Cashier password (or C to cancel):
+--- Cashier Login (enter C to cancel) ---
+Cashier password:
 Incorrect password for Cashier. 2 attempts left.
-Enter Cashier password (or C to cancel):
+Cashier password:
 Incorrect password for Cashier. 1 attempt left.
-Enter Cashier password (or C to cancel):
+Cashier password:
 3 incorrect password attempts for Cashier. Returning to Main Menu...
 ```
 
@@ -278,15 +288,16 @@ Order ORD-001 added to the queue. Total: P290.00
 
 **Sorting (Insertion Sort, user picks the key and the order)**
 ```
-Sort products by:
+--- Sort Products (enter C at any prompt to cancel) ---
+Sort by:
 [1] Quantity
 [2] Price
-Choice [1-2] (or C to cancel): 1
+Choice [1-2]: 1
 
 Sort order:
 [1] Ascending (lowest to highest)
 [2] Descending (highest to lowest)
-Choice [1-2] (or C to cancel): 2
+Choice [1-2]: 2
 
 Sorting complete: products sorted by quantity (highest to lowest)
 ```
@@ -296,7 +307,7 @@ Sorting complete: products sorted by quantity (highest to lowest)
 Next order: ORD-001 | Total: P270.00
     - 2x IC001 Vanilla (S, Cone) = P90.00
     - 3x IC002 Mango (M, Cone) = P180.00
-Process this order? [Y/n] (or C to cancel): Y
+Process this order? [Y/n]: Y
 Order ORD-001 processed successfully. Inventory updated:
     - IC001 Vanilla: -2, stock now 48
     - IC002 Mango: -3, stock now 22
