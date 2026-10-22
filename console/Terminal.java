@@ -141,9 +141,22 @@ public class Terminal {
 
     /** Starts a new screen: clears it in interactive mode, or prints a blank line in plain mode. */
     public static void newScreen() {
-        if (!screens) {
+        if (screens) {
+            clearScreen();
+        } else {
             System.out.println();
-        } else if (ansi) {
+        }
+    }
+
+    /**
+     * Interactive mode: clears the screen so a result starts at the top of the window and the
+     * menu is not pushed out of view. Plain mode: does nothing, so saved output is unchanged.
+     */
+    public static void clearScreen() {
+        if (!screens) {
+            return;
+        }
+        if (ansi) {
             System.out.print(ESC + "H" + ESC + "2J"); // cursor to the top left, then clear
             System.out.flush();
         } else if (isWindows()) {
